@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:ignore="MissingClass">
+
+<fragment xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:map="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/map"
+    class="com.google.android.gms.maps.SupportMapFragment"
+    android:layout_width="match_parent"
+    android:layout_toEndOf="@+id/player"
+    android:layout_height="match_parent"
+    android:keepScreenOn="true"
+    tools:context=".MapsActivity"
+    />
+
+    <Button
+        android:id="@+id/connect"
+        android:layout_width="450dp"
+        android:layout_height="match_parent"
+
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentBottom="true"
+        android:background="@android:color/transparent" />
+    <com.google.android.exoplayer2.ui.StyledPlayerView
+        android:id="@+id/player"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_width="450dp"/>
+    <com.google.android.exoplayer2.ui.StyledPlayerView
+        android:id="@+id/player2"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_width="450dp"
+        android:visibility="invisible"/>
+    <com.google.android.exoplayer2.ui.StyledPlayerView
+        android:id="@+id/playerAudio"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_width="1dp"
+        android:visibility="invisible"/>
+    <TextView
+        android:id="@+id/onOff"
+        android:textColor="#FFFFFF"
+
+        android:layout_width="wrap_content"
+        android:background="#000000"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="10pt"/>
+    <TextView
+        android:id="@+id/omaNopeus"
+        android:textColor="#008000"
+        android:layout_toRightOf="@id/onOff"
+        android:layout_width="wrap_content"
+        android:background="#000000"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="10pt"/>
+    <TextView
+        android:id="@+id/koiraNopeus"
+        android:textColor="#FF0000"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#000000"
+        android:layout_toRightOf="@id/omaNopeus"
+        android:text=""
+        android:textSize="10pt"/>
+
+    <TextView
+        android:id="@+id/valimatka"
+        android:textColor="#ffffff"
+        android:layout_width="wrap_content"
+        android:background="#000000"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="250dp"
+        android:text=""
+        android:textSize="10pt"/>
+
+    <ProgressBar
+        android:id="@+id/battery"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="80dp"
+        android:layout_height="20dp"
+        android:layout_alignParentRight="true"
+        android:secondaryProgressTint="#ffffff"
+        android:layout_marginTop="2dp"
+        />
+    <ImageButton
+        android:id="@+id/aani"
+        android:layout_width="80dp"
+        android:layout_below="@id/battery"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:layout_marginEnd="1dp"
+        android:layout_toStartOf="@+id/yovalo"
+        android:src="@drawable/volume_up_black_24dp"
+        android:visibility="invisible"
+        />
+    <ImageButton
+        android:id="@+id/lahetys"
+        android:layout_width="80dp"
+        android:layout_below="@id/battery"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:layout_marginEnd="1dp"
+        android:layout_toStartOf="@+id/aani"
+        android:src="@drawable/record_voice_over_black_24dp"
+        android:visibility="invisible"
+        />
+
+    <ImageButton
+        android:id="@+id/led"
+        android:layout_below="@id/battery"
+        android:layout_marginTop="5dp"
+        android:layout_toStartOf="@id/toiminnot"
+        android:layout_width="80dp"
+        android:layout_height="wrap_content"
+        android:src="@drawable/flash_on_black_24dp"
+        android:visibility="invisible"
+        />
+
+    <ImageButton
+        android:id="@+id/yovalo"
+        android:layout_toStartOf="@id/led"
+        android:layout_below="@id/battery"
+        android:layout_marginTop="5dp"
+        android:layout_width="80dp"
+        android:layout_height="wrap_content"
+        android:src="@drawable/bedtime_black_24dp"
+        android:visibility="invisible"
+        />
+
+
+
+    <Button
+        android:id="@+id/keskitaKoiraan"
+        android:layout_below="@id/battery"
+        android:layout_marginTop="5dp"
+        android:layout_toStartOf="@id/lahetys"
+        android:layout_width="80dp"
+        android:layout_height="68dp"
+        android:text="Koira"
+        android:visibility="invisible"
+        />
+
+    <Button
+        android:id="@+id/toiminnot"
+        android:layout_alignParentRight="true"
+        android:layout_below="@id/battery"
+        android:layout_marginTop="5dp"
+        android:layout_width="30dp"
+        android:layout_height="68dp"
+        android:text=""
+        android:visibility="visible"
+        />
+
+</RelativeLayout>
