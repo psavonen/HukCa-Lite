@@ -40,11 +40,6 @@ public class Therion extends Activity {
         };
         if (!hasPermissions(this, PERMISSIONS)) {
             ActivityCompat.requestPermissions(com.susiturva.susicam.Therion.this, PERMISSIONS, PERMISSION_ALL);
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
 
         }
         List<MyDBHandler> srnumerot = db.getAllSarjanumerot();

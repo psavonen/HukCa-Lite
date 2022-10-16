@@ -70,7 +70,7 @@
         android:layout_width="wrap_content"
         android:background="#000000"
         android:layout_height="wrap_content"
-        android:text="Off"
+        android:text=""
         android:textSize="10pt"/>
     <TextView
         android:id="@+id/omaNopeus"
@@ -101,7 +101,7 @@
         android:background="#000000"
         android:layout_height="wrap_content"
         android:layout_toRightOf="@id/koiraNopeus"
-        android:text="Et: 0.0 km"
+        android:text=""
         android:textSize="10pt"/>
 
     <ProgressBar
@@ -121,7 +121,7 @@
         android:layout_marginTop="5dp"
         android:layout_marginEnd="1dp"
         android:layout_toStartOf="@+id/yovalo"
-        android:src="@drawable/volume_up_black_24dp"
+        android:src="@drawable/volume_off_black_24dp"
         android:visibility="invisible"
         />
     <ImageButton
@@ -143,7 +143,7 @@
         android:layout_toStartOf="@id/toiminnot"
         android:layout_width="80dp"
         android:layout_height="wrap_content"
-        android:src="@drawable/flash_on_black_24dp"
+        android:src="@drawable/flashlight_off_40"
         android:visibility="invisible"
         />
 
@@ -154,7 +154,7 @@
         android:layout_marginTop="5dp"
         android:layout_width="80dp"
         android:layout_height="wrap_content"
-        android:src="@drawable/bedtime_black_24dp"
+        android:src="@drawable/brightness_7_black_24dp"
         android:visibility="invisible"
         />
 

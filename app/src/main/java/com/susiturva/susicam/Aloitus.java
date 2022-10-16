@@ -1,12 +1,17 @@
 package com.susiturva.susicam;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
+
+import androidx.core.app.ActivityCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +24,8 @@ public class Aloitus extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_aloitus);
+
+
         db = new DatabaseHelper(this);
         sarjanumerot.addAll(db.getAllSarjanumerot());
         for(final MyDBHandler sarjanumero : sarjanumerot) {
@@ -40,7 +47,7 @@ public class Aloitus extends Activity {
                     startActivity(intent);
                 }
             }
-        }, 2000);
+        }, 1000);
         ImageView imageView = findViewById(R.id.connect);
         imageView.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -51,4 +58,5 @@ public class Aloitus extends Activity {
             }
         });
     }
+
 }

@@ -6,13 +6,9 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
 import android.util.JsonReader;
-import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -21,8 +17,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.susiturva.susicam.DatabaseHelper;
 import com.susiturva.susicam.MapsActivity;
 import com.susiturva.susicam.MyDBHandler;
-import com.susiturva.susicam.R;
-import com.susiturva.susicam.model.LocationModel;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -36,12 +30,18 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
+import java.util.Scanner;
+import java.util.stream.Collectors;
 
 import javax.net.ssl.HttpsURLConnection;
 
 public class LocationService extends Service {
     public static final String CHANNEL_ID = "LocationServiceChannel";
+    public static final String SUSIPURKKI_SUSIPURKKI = "susipurkki:susipurkki";
+    public static final String X_API_KEY = "awidjilherg";
+    public static final int ROUTE_LENGTH = 20;
     private boolean runner = true;
     public Long session_id;
     public Double lat;
@@ -59,7 +59,7 @@ public class LocationService extends Service {
     private DatabaseHelper db;
     private List<MyDBHandler> sarjanumerot = new ArrayList<>();
     private String srnumero;
-    public LocationService() throws IOException {
+    public LocationService() {
     }
 
     @Override
@@ -74,7 +74,7 @@ public class LocationService extends Service {
         createNotificationChannel();
         Intent notificationIntent = new Intent(this, MapsActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this,
-                0, notificationIntent, 0);
+                0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("SusiCam palvelu")
                 .setContentText(input)
@@ -92,7 +92,7 @@ public class LocationService extends Service {
                 }catch(Exception e){}
 
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(2000);
 
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -113,6 +113,24 @@ public class LocationService extends Service {
             }
         });
         thread1.start();
+        Runnable runnable1 = () -> {
+
+            while(runner) {
+                try {
+                    route(serial_hash);
+
+                }catch(Exception e){}
+
+                try {
+                    Thread.sleep(2000);
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        Thread thread2 = new Thread(runnable1);
+        thread2.start();
         return START_STICKY;
     }
     @Override
@@ -148,9 +166,9 @@ public class LocationService extends Service {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        String encoded = Base64.getEncoder().encodeToString(("susipurkki:susipurkki").getBytes(StandardCharsets.UTF_8));
+        String encoded = Base64.getEncoder().encodeToString(SUSIPURKKI_SUSIPURKKI.getBytes(StandardCharsets.UTF_8));
         connection.setRequestProperty("Authorization", "Basic " + encoded);
-        connection.setRequestProperty("x-apikey", "awidjilherg");
+        connection.setRequestProperty("x-apikey", X_API_KEY);
 
         try {
 
@@ -279,9 +297,9 @@ public class LocationService extends Service {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        String encoded = Base64.getEncoder().encodeToString(("susipurkki:susipurkki").getBytes(StandardCharsets.UTF_8));
+        String encoded = Base64.getEncoder().encodeToString(SUSIPURKKI_SUSIPURKKI.getBytes(StandardCharsets.UTF_8));
         myConnection.setRequestProperty("Authorization", "Basic " + encoded);
-        myConnection.setRequestProperty("x-apikey", "awidjilherg");
+        myConnection.setRequestProperty("x-apikey", X_API_KEY);
 
         try {
 
@@ -379,5 +397,102 @@ public class LocationService extends Service {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    private void route(String serialHash){
+
+        URL endpoint = null;
+
+        try {
+            endpoint = new URL("https://toor.hopto.org/api/v1/route/" + serialHash + "/geojson/" + session_id + "?every_nth_point=20");
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+
+
+        URL finalEndpoint = endpoint;
+
+        HttpsURLConnection connection =
+                null;
+        try {
+            connection = (HttpsURLConnection) finalEndpoint.openConnection();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        String encoded = Base64.getEncoder().encodeToString(SUSIPURKKI_SUSIPURKKI.getBytes(StandardCharsets.UTF_8));
+        connection.setRequestProperty("Authorization", "Basic " + encoded);
+        connection.setRequestProperty("x-apikey", X_API_KEY);
+
+        try {
+            if(session_id != null) {
+                if (connection.getResponseCode() == 200) {
+
+               Scanner scan = new Scanner(connection.getInputStream());
+                String str = new String();
+                while(scan.hasNext())
+                    str += scan.nextLine();
+                scan.close();
+               // JSONArray arr = new JSONArray(str);
+                JSONObject obj = new JSONObject(str);
+                //for (int i = 0; i < obj.length(); i++){
+                    //obj = arr.getJSONObject(i);
+                    JSONObject obj2 = obj.getJSONObject("geometry");
+                    JSONArray obj3 = obj2.getJSONArray("coordinates");
+                    ArrayList<LatLng> latLngList = new ArrayList<>();
+
+                    for(int i = 0; i < obj3.length(); i++){
+                        JSONArray arr = obj3.getJSONArray(i);
+                       double lat = arr.getDouble(0);
+                       double lon = arr.getDouble(1);
+                       if(lat != 0.0)
+                            latLngList.add(new LatLng(lon, lat));
+                        /* for(int j = 0; j < arr.length(); j++ ){
+                            latLngList.add(arr.getDouble(j));
+                        }*/
+                    }
+                    Collections.reverse(latLngList);
+                    latLngList.subList(ROUTE_LENGTH, latLngList.size()).clear();
+                //}
+                /*
+                    InputStream responseBody = connection.getInputStream();
+
+                    InputStreamReader responseBodyReader =
+                            new InputStreamReader(responseBody, StandardCharsets.UTF_8);
+
+                    JsonReader jsonReader = new JsonReader(responseBodyReader);
+
+                    jsonReader.beginObject();
+                    //List <Double> coords = new ArrayList<>();
+                    double[] coords = new double[10];
+                    JSONArray arr = new JSONArray();
+                    JSONObject obj = new JSONObject();
+                    String str = new String();
+                    try {
+                        while (jsonReader.hasNext()) {
+                            obj.append("coordinates", jsonReader.nextString());
+                            //String key = jsonReader.nextName();
+                            jsonReader.close();
+                        if (key.equals("coordinates")) {
+                            coords = jsonReader.nextDouble();
+                        }
+                        */
+                        Intent i = new Intent("Route");
+                        Bundle b = new Bundle();
+                        b.putParcelableArrayList("Route", latLngList );
+                        i.putExtra("Route", b);
+                        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
+
+                    /*
+                        }
+                    } catch (Exception e) {
+                    }*/
+                } else {
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
     }
 }

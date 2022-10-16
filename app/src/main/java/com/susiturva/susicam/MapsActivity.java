@@ -1,10 +1,13 @@
 package com.susiturva.susicam;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
@@ -26,6 +29,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -49,6 +53,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.android.gms.maps.model.TileProvider;
 import com.susiturva.susicam.service.LocationService;
@@ -65,7 +71,7 @@ import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener {
 
     private GoogleMap mMap;
     private TextView koiraNopeus;
@@ -75,6 +81,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private StyledPlayerView playerView2;
     private StyledPlayerView playerViewAudio;
     private LatLng latLong = new LatLng(0, 0);
+    private List<LatLng>points = new ArrayList<>();
+    private ArrayList<LatLng>route = new ArrayList<>();
+    private Polyline gpsTrack;
     private HashMap<String, Marker> mMarkers = new HashMap<>();
     private boolean firstTime = true;
     private Double alt;
@@ -90,6 +99,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private int ir_active;
     private int My_PERMISSION_REQUEST_FINE_LOCATION = 0;
     private int My_PERMISSION_REQUEST_WRITE_ACCESS = 0;
+    private final int SCREEN_WIDTH_THRESHOLD = 1080;
+    private final int SOUND_EFFECT_VOLUME = 100;
     private ProgressBar battery;
     private Marker marker = null;
     private Marker puhelin;
@@ -112,6 +123,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private boolean sound = false;
     private boolean nightVision = false;
     private boolean irLeds = false;
+    private boolean broadcast = false;
 
     private Button btnSwitch;
     private Button toiminnot;
@@ -128,6 +140,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ExoPlayer playerAudio;
 
     private final String CONTROL_URL_BASE = "https://toor.hopto.org/api/v1/control";
+    private final String URL_BASE = "https://toor.hopto.org/api/v1";
 
     public static String stream1;
     public static String stream2;
@@ -205,19 +218,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             //getActionBar().hide();
         }
         startService();
-        new Handler().postDelayed(() ->
+       /* new Handler().postDelayed(() ->
                         exoplayerTwoStreams(),
                 4000);
         new Handler().postDelayed(() ->
                         exoplayerAudio(),
-                4000);
+                4000);*/
 
-       if(dpWidth > 820) {
+       if(dpWidth > SCREEN_WIDTH_THRESHOLD) {
            playerView.setVisibility(View.VISIBLE);
            playerView2.setVisibility(View.VISIBLE);
        }
         btnSwitch.setOnClickListener(v -> {
-            if(dpWidth < 820) {
+            if(dpWidth < SCREEN_WIDTH_THRESHOLD) {
                 if (!switcher) {
                     playerView.setVisibility(View.INVISIBLE);
                     playerView2.setVisibility(View.VISIBLE);
@@ -238,7 +251,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 yovalo.setVisibility(View.VISIBLE);
                 koira.setVisibility(View.VISIBLE);
                 aani.setVisibility(View.VISIBLE);
-                lahetys.setVisibility(View.INVISIBLE);
+                lahetys.setVisibility(View.VISIBLE);
                 //fullscreen.setVisibility(View.VISIBLE);
                 piilossa = false;
                 toiminnot.setText(">");
@@ -255,17 +268,42 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         koira.setOnClickListener(v -> firstTime = true);
+        lahetys.setOnClickListener(v -> {
+            String sound = "machinegun";
+            /*int max = 3;
+            int min = 1;
+            int range = max - min + 1;
+            int noise = (int)(Math.random() * range) + min;
+            switch (noise){
+                case 1:
+                    sound = "police";
+                    break;
+                case 2:
+                    sound = "pistol";
+                    break;
+                case 3:
+                    sound = "machinegun";
+                    break;
+                default:
+                    throw new IllegalStateException("Unexpected value: " + noise);
+            }*/
+            String urli = URL_BASE + "/soundeffect/" + srnumero + "/" + sound + "/" + SOUND_EFFECT_VOLUME;
+            setControl(urli);
+            Toast.makeText(MapsActivity.this,
+                    "Lähettää ääntä." ,
+                    Toast.LENGTH_LONG).show();
 
+        } );
         aani.setOnClickListener(v -> {
             if (!sound) {
                 playerAudio.prepare();
                 playerAudio.play();
-                aani.setImageResource(R.drawable.volume_off_black_24dp);
+                aani.setImageResource(R.drawable.volume_up_black_24dp);
                 sound = true;
             } else {
                 playerAudio.stop();
                 exoplayerAudio();
-                aani.setImageResource(R.drawable.volume_up_black_24dp);
+                aani.setImageResource(R.drawable.volume_off_black_24dp);
                 sound = false;
             }
 
@@ -274,11 +312,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             String urli = CONTROL_URL_BASE + "/" + srnumero + "/night_vision/";
             if (!nightVision) {
                 setControl(urli + "1");
-                yovalo.setImageResource(R.drawable.brightness_7_black_24dp);
+                yovalo.setImageResource(R.drawable.bedtime_black_24dp);
                 nightVision = true;
             } else {
                 setControl(urli + "0");
-                yovalo.setImageResource(R.drawable.bedtime_black_24dp);
+                yovalo.setImageResource(R.drawable.brightness_7_black_24dp);
                 nightVision = false;
             }
         });
@@ -286,11 +324,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             String urli = CONTROL_URL_BASE + "/" + srnumero + "/ir_led/";
             if (!irLeds) {
                 setControl(urli + "1");
-                valot.setImageResource(R.drawable.flash_off_black_24dp);
+                valot.setImageResource(R.drawable.flashlight_on_40);
                 irLeds = true;
             } else {
                 setControl(urli + "0");
-                valot.setImageResource(R.drawable.flash_on_black_24dp);
+                valot.setImageResource(R.drawable.flashlight_off_40);
                 irLeds = false;
             }
         });
@@ -318,14 +356,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      */
     protected void onResume() {
         super.onResume();
-        startService();
+        if(!isMyServiceRunning(LocationService.class)) {
+            startService();
+        }
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter("LocationUpdates"));
         LocalBroadcastManager.getInstance(this).registerReceiver(aMessageReceiver, new IntentFilter("Streams"));
+        LocalBroadcastManager.getInstance(this).registerReceiver(bMessageReceiver, new IntentFilter("Route"));
         firstTime = true;
-        exoplayerAudio();
-        exoplayerTwoStreams();
+        new Handler().postDelayed(() ->
+                        exoplayerTwoStreams(),
+                4000);
+        new Handler().postDelayed(() ->
+                        exoplayerAudio(),
+                4000);
     }
 
+    @SuppressLint("MissingPermission")
     @Override
     public void onMapReady(GoogleMap googleMap) {
         TileProvider wmsTileProvider = TileProviderFactory.getOsgeoWmsTileProvider();
@@ -334,6 +380,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.addTileOverlay(new TileOverlayOptions().tileProvider(wmsTileProvider));
         mMap.setMaxZoomPreference(16);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLong));
+
 
     }
 
@@ -368,7 +415,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     marker = null;
                 }
                 if (marker == null) {
-                    marker = mMap.addMarker(new MarkerOptions().title("koira").position(latLong));
+
+                    marker = mMap.addMarker(new MarkerOptions().title("koira").position(latLong).icon(BitmapDescriptorFactory.fromResource(R.drawable.dog_icon_red_24)));
                 }
 
 
@@ -403,7 +451,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 stream_1_key = a.getString("stream_1_key");
                 stream_2_key = a.getString("stream_2_key");
                 audio_key = a.getString("audio_key");
+                exoplayerTwoStreams();
+                exoplayerAudio();
             } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    };
+
+    private BroadcastReceiver bMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            Bundle a = intent.getBundleExtra("Route");
+
+            try {
+                route = a.getParcelableArrayList("Route");
+                PolylineOptions polylineOptions = new PolylineOptions();
+                polylineOptions.color(Color.RED);
+                polylineOptions.width(8);
+                gpsTrack = mMap.addPolyline(polylineOptions);
+                gpsTrack.setPoints(route);
+                gpsTrack.setZIndex(1000);
+               } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -500,7 +570,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         player2.play();
         playerView.setVisibility(View.VISIBLE);
         playerView2.setVisibility(View.INVISIBLE);
-        if(dpWidth > 820) {
+        if(dpWidth > SCREEN_WIDTH_THRESHOLD) {
            playerView2.setVisibility(View.VISIBLE);
        }
         handlePlaybackError();
@@ -605,42 +675,42 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @SuppressLint("MissingPermission")
     public void speedAndLocation() {
-        LocationListener locationListener = location -> {
+        try {
+            LocationListener locationListener = location -> {
 
+                    LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                    double dlat = location.getLatitude();
+                    double dlgn = location.getLongitude();
+                    double currentSpeed = location.getSpeed();
+                    currentSpeed = (double) (currentSpeed * 3.6);
+                    currentSpeed = (double) Math.round(currentSpeed * 1d) / 1d;
+                    String setti = currentSpeed + "  ";
+                    omaNopeus.setText(setti);
+                    float[] results = new float[1];
+                    double lat = latLong.latitude;
+                    double lng = latLong.longitude;
+                    Location.distanceBetween(lat, lng, dlat, dlgn, results);
+                    float distance = results[0] / 1000;
+                    double dist = (double) Math.round(distance * 100d) / 100d;
+                    vmatka.setText("Et:" + dist + "km");
+                    if (puhelin != null) {
+                        puhelin.remove();
+                    }
+                    puhelin = mMap.addMarker(new MarkerOptions().position(latLng).title("Puhelin").icon(BitmapDescriptorFactory.fromResource(R.drawable.human_male_icon_green)));
+                    puhelin.setTag(new Float(0.0));
+            };
+
+            LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
             try {
-                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                double dlat = location.getLatitude();
-                double dlgn = location.getLongitude();
-
-                double currentSpeed = location.getSpeed();
-                currentSpeed = (double) (currentSpeed * 3.6);
-                currentSpeed = (double) Math.round(currentSpeed * 1d) / 1d;
-                String setti = currentSpeed + "  ";
-                omaNopeus.setText(setti);
-                float[] results = new float[1];
-                double lat = latLong.latitude;
-                double lng = latLong.longitude;
-                Location.distanceBetween(lat, lng, dlat, dlgn, results);
-                float distance = results[0]/1000;
-                double dist = (double)Math.round(distance * 100d) / 100d;
-                vmatka.setText("Et:" + dist + "km");
-                if(puhelin != null){
-                    puhelin.remove();
-                }
-                puhelin = mMap.addMarker(new MarkerOptions().position(latLng).title("Puhelin").icon(BitmapDescriptorFactory.defaultMarker(150)));
-                puhelin.setTag(new Float(0.0));
-
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_TIME, MIN_DIST, locationListener);
             } catch (SecurityException e) {
                 e.printStackTrace();
             }
-
-        };
-        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        try {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_TIME, MIN_DIST, locationListener);
         }
-        catch (SecurityException e){
-            e.printStackTrace();
+        catch(Exception e){
+            Toast.makeText(MapsActivity.this,
+                    "KYTKE PAIKANNUS PÄÄLLE" ,
+                    Toast.LENGTH_LONG).show();
         }
     }
     private void handlePlaybackError(){
@@ -673,6 +743,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         player.release();
         playerAudio.release();
         stopService();
+    }
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public void onPolylineClick(@NonNull Polyline polyline) {
+
     }
 }
 
