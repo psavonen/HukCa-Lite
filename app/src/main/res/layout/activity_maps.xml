@@ -120,7 +120,7 @@
         android:layout_toStartOf="@id/toiminnot"
         android:layout_width="80dp"
         android:layout_height="wrap_content"
-        android:src="@drawable/flash_on_black_24dp"
+        android:src="@drawable/flashlight_off_40"
         android:visibility="invisible"
         />
 

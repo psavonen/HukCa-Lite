@@ -89,7 +89,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private Double alt;
     private Double speed;
     private Double bearing;
-    private float dpWidth;
+    //private float dpWidth;
+    private Double diagonalInches;
     private Long uptime;
     private final long MIN_TIME = 1000; // 1 second
     private final long MIN_DIST = 5; // 5 Meters
@@ -100,6 +101,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private int My_PERMISSION_REQUEST_FINE_LOCATION = 0;
     private int My_PERMISSION_REQUEST_WRITE_ACCESS = 0;
     private final int SCREEN_WIDTH_THRESHOLD = 1080;
+    private final Double SCREEN_SIZE_THRESHOLD = 6.55;
     private final int SOUND_EFFECT_VOLUME = 100;
     private ProgressBar battery;
     private Marker marker = null;
@@ -184,7 +186,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        dpWidth = displayMetrics.widthPixels / displayMetrics.density;
+        float yInches = displayMetrics.heightPixels/displayMetrics.ydpi;
+        float xInches = displayMetrics.widthPixels/displayMetrics.xdpi;
+        diagonalInches = Math.sqrt(xInches * xInches + yInches * yInches);
+        //dpWidth = displayMetrics.widthPixels / displayMetrics.density;
 
         db = new DatabaseHelper(this);
         sarjanumerot.addAll(db.getAllSarjanumerot());
@@ -225,12 +230,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         exoplayerAudio(),
                 4000);*/
 
-       if(dpWidth > SCREEN_WIDTH_THRESHOLD) {
+       if(diagonalInches > SCREEN_SIZE_THRESHOLD) {
            playerView.setVisibility(View.VISIBLE);
            playerView2.setVisibility(View.VISIBLE);
        }
         btnSwitch.setOnClickListener(v -> {
-            if(dpWidth < SCREEN_WIDTH_THRESHOLD) {
+            if(diagonalInches < SCREEN_SIZE_THRESHOLD) {
                 if (!switcher) {
                     playerView.setVisibility(View.INVISIBLE);
                     playerView2.setVisibility(View.VISIBLE);
@@ -570,7 +575,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         player2.play();
         playerView.setVisibility(View.VISIBLE);
         playerView2.setVisibility(View.INVISIBLE);
-        if(dpWidth > SCREEN_WIDTH_THRESHOLD) {
+        if(diagonalInches > SCREEN_SIZE_THRESHOLD) {
            playerView2.setVisibility(View.VISIBLE);
        }
         handlePlaybackError();
