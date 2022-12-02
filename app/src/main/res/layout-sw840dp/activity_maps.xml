@@ -114,6 +114,17 @@
         android:layout_marginTop="2dp"
         />
     <ImageButton
+        android:id="@+id/zoom"
+        android:layout_width="80dp"
+        android:layout_below="@id/battery"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:layout_marginEnd="1dp"
+        android:layout_toStartOf="@+id/aani"
+        android:src="@drawable/fullscreen_black_24dp"
+        android:visibility="invisible"
+        />
+    <ImageButton
         android:id="@+id/aani"
         android:layout_width="80dp"
         android:layout_below="@id/battery"

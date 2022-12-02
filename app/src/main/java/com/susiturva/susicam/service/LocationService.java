@@ -33,7 +33,6 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
-import java.util.stream.Collectors;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -52,9 +51,13 @@ public class LocationService extends Service {
     public int bat_soc;
     public Long uptime;
     public String last_update;
-    public int active_streams;
+    public int active_video;
+    public int active_audio;
     public int camera_mode;
     public int ir_active;
+    public int front_video_activated;
+    public int back_video_activated;
+    public int audio_activated;
     public String ip_address;
     private DatabaseHelper db;
     private List<MyDBHandler> sarjanumerot = new ArrayList<>();
@@ -221,9 +224,13 @@ public class LocationService extends Service {
                         if(LastUpdateKey.equalsIgnoreCase("last_update")){
                             last_update = jsonReader.nextString();
                         }
-                        String activeStreamsKey = jsonReader.nextName();
-                        if(activeStreamsKey.equalsIgnoreCase("active_streams")){
-                            active_streams = jsonReader.nextInt();
+                        String activeVideoKey = jsonReader.nextName();
+                        if(activeVideoKey.equalsIgnoreCase("active_video")){
+                            active_video = jsonReader.nextInt();
+                        }
+                        String activeAudioKey = jsonReader.nextName();
+                        if(activeAudioKey.equalsIgnoreCase("active_audio")){
+                            active_audio = jsonReader.nextInt();
                         }
                         String ipAddressKey = jsonReader.nextName();
                         if(ipAddressKey.equalsIgnoreCase("ip_address")){
@@ -237,6 +244,19 @@ public class LocationService extends Service {
                         if(irActiveKey.equalsIgnoreCase("ir_active")){
                             ir_active = jsonReader.nextInt();
                         }
+                        String front_video_activatedKey = jsonReader.nextName();
+                        if(front_video_activatedKey.equalsIgnoreCase("front_video_activated")){
+                            front_video_activated = jsonReader.nextInt();
+                        }
+                        String back_video_activatedKey = jsonReader.nextName();
+                        if(back_video_activatedKey.equalsIgnoreCase("back_video_activated")){
+                            back_video_activated = jsonReader.nextInt();
+                        }
+                        String audio_activatedKey = jsonReader.nextName();
+                        if(audio_activatedKey.equalsIgnoreCase("audio_activated")){
+                            audio_activated = jsonReader.nextInt();
+                        }
+
 
                         LatLng latLng = new LatLng(lat, lng);
                         Intent i = new Intent("LocationUpdates");
@@ -250,6 +270,9 @@ public class LocationService extends Service {
                         b.putString("Ip_address", ip_address);
                         b.putInt("Camera_mode", camera_mode);
                         b.putInt("Ir_active", ir_active);
+                        b.putInt("Front_video_activated", front_video_activated);
+                        b.putInt("Back_video_activated", back_video_activated);
+                        b.putInt("Audio_activated", audio_activated);
                         b.putParcelable("LatLng", latLng);
                         i.putExtra("LatLng", b);
                         LocalBroadcastManager.getInstance(this).sendBroadcast(i);

@@ -2,9 +2,11 @@ package com.susiturva.susicam;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
@@ -16,6 +18,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -29,6 +32,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
@@ -71,7 +76,7 @@ import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener {
 
     private GoogleMap mMap;
     private TextView koiraNopeus;
@@ -93,7 +98,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private Double diagonalInches;
     private Long uptime;
     private final long MIN_TIME = 1000; // 1 second
-    private final long MIN_DIST = 5; // 5 Meters
+    private final long MIN_DIST = 0; // 5 Meters
     private int bat_soc;
     private int active_streams;
     private int camera_mode;
@@ -101,7 +106,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private int My_PERMISSION_REQUEST_FINE_LOCATION = 0;
     private int My_PERMISSION_REQUEST_WRITE_ACCESS = 0;
     private final int SCREEN_WIDTH_THRESHOLD = 1080;
-    private final Double SCREEN_SIZE_THRESHOLD = 6.55;
+    private final Double SCREEN_SIZE_THRESHOLD = 6.5;
     private final int SOUND_EFFECT_VOLUME = 100;
     private ProgressBar battery;
     private Marker marker = null;
@@ -183,14 +188,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        float yInches = displayMetrics.heightPixels/displayMetrics.ydpi;
-        float xInches = displayMetrics.widthPixels/displayMetrics.xdpi;
-        diagonalInches = Math.sqrt(xInches * xInches + yInches * yInches);
-        //dpWidth = displayMetrics.widthPixels / displayMetrics.density;
-
+        try {
+            DisplayMetrics displayMetrics = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+            float yInches = displayMetrics.heightPixels / displayMetrics.ydpi;
+            float xInches = displayMetrics.widthPixels / displayMetrics.xdpi;
+            diagonalInches = Math.sqrt(xInches * xInches + yInches * yInches);
+            //dpWidth = displayMetrics.widthPixels / displayMetrics.density;
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
         db = new DatabaseHelper(this);
         sarjanumerot.addAll(db.getAllSarjanumerot());
         for (MyDBHandler sarjanumero : sarjanumerot) {
@@ -212,16 +220,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         valot = (ImageButton) findViewById(R.id.led);
         yovalo = (ImageButton) findViewById(R.id.yovalo);
         aani = (ImageButton) findViewById(R.id.aani);
-        //fullscreen = findViewById(R.id.zoom);
+        fullscreen = (ImageButton) findViewById(R.id.zoom);
         battery = findViewById(R.id.battery);
         koiraNopeus = findViewById(R.id.koiraNopeus);
         omaNopeus = findViewById(R.id.omaNopeus);
         vmatka = findViewById(R.id.valimatka);
         toiminnot = findViewById(R.id.toiminnot);
         toiminnot.setText("<");
-        if(getActionBar() != null){
+       /* if(getActionBar() != null){
             //getActionBar().hide();
-        }
+        }*/
         startService();
        /* new Handler().postDelayed(() ->
                         exoplayerTwoStreams(),
@@ -229,13 +237,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         new Handler().postDelayed(() ->
                         exoplayerAudio(),
                 4000);*/
-
-       if(diagonalInches > SCREEN_SIZE_THRESHOLD) {
-           playerView.setVisibility(View.VISIBLE);
-           playerView2.setVisibility(View.VISIBLE);
-       }
+        try {
+            if (diagonalInches > SCREEN_SIZE_THRESHOLD) {
+                playerView.setVisibility(View.VISIBLE);
+                playerView2.setVisibility(View.VISIBLE);
+            }
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
         btnSwitch.setOnClickListener(v -> {
-            if(diagonalInches < SCREEN_SIZE_THRESHOLD) {
+            if(diagonalInches <= SCREEN_SIZE_THRESHOLD) {
                 if (!switcher) {
                     playerView.setVisibility(View.INVISIBLE);
                     playerView2.setVisibility(View.VISIBLE);
@@ -368,12 +380,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         LocalBroadcastManager.getInstance(this).registerReceiver(aMessageReceiver, new IntentFilter("Streams"));
         LocalBroadcastManager.getInstance(this).registerReceiver(bMessageReceiver, new IntentFilter("Route"));
         firstTime = true;
-        new Handler().postDelayed(() ->
-                        exoplayerTwoStreams(),
-                4000);
-        new Handler().postDelayed(() ->
-                        exoplayerAudio(),
-                4000);
+        try {
+            new Handler().postDelayed(() ->
+                            exoplayerTwoStreams(),
+                    4000);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+        try {
+            new Handler().postDelayed(() ->
+                            exoplayerAudio(),
+                    4000);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -436,7 +458,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             try {
                 setBattery();
                 koiraNopeus.setText(speed.toString());
-                speedAndLocation();
+                if (checkGPSandNetwork()) {
+                    try{
+                        speedAndLocation();
+                    }
+                    catch(Exception e){
+                        e.printStackTrace();
+                    }
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -456,8 +485,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 stream_1_key = a.getString("stream_1_key");
                 stream_2_key = a.getString("stream_2_key");
                 audio_key = a.getString("audio_key");
-                exoplayerTwoStreams();
-                exoplayerAudio();
+                /*try {
+                    exoplayerTwoStreams();
+                    exoplayerAudio();
+                }
+                catch(Exception e){
+                    e.printStackTrace();
+                }*/
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -637,6 +671,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onDestroy() {
         super.onDestroy();
         player.release();
+        player2.release();
         playerAudio.release();
         stopService();
     }
@@ -746,6 +781,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onPause() {
         super.onPause();
         player.release();
+        player2.release();
         playerAudio.release();
         stopService();
     }
@@ -762,6 +798,34 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onPolylineClick(@NonNull Polyline polyline) {
 
+    }
+    public boolean checkGPSandNetwork(){
+        LocationManager lm = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE);
+        boolean gps_enabled = false;
+        boolean network_enabled = false;
+
+        try {
+            gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        } catch(Exception ex) {}
+
+        try {
+            network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        } catch(Exception ex) {}
+
+        if(!gps_enabled && !network_enabled) {
+            // notify user
+            new AlertDialog.Builder(this)
+                    .setMessage("ASETA PAIKANNUS PÄÄLLE")
+                    .setPositiveButton("Paikannus", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+                            getApplicationContext().startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                        }
+                    })
+                    .setNegativeButton("Peru",null)
+                    .show();
+        }
+        return gps_enabled;
     }
 }
 
