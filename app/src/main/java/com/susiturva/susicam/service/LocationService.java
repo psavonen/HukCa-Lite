@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.JsonReader;
 
@@ -28,11 +29,17 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -48,6 +55,7 @@ public class LocationService extends Service {
     public Double alt;
     public Double speed;
     public Double bearing;
+    private float erotus;
     public int bat_soc;
     public Long uptime;
     public String last_update;
@@ -62,6 +70,10 @@ public class LocationService extends Service {
     private DatabaseHelper db;
     private List<MyDBHandler> sarjanumerot = new ArrayList<>();
     private String srnumero;
+    private Timer timer;
+    private TimerTask timerTask;
+    private Handler handler = new Handler();
+
     public LocationService() {
     }
 
@@ -91,6 +103,11 @@ public class LocationService extends Service {
             while(runner) {
                 try {
                     location(serial_hash);
+                    try {
+                        powerService();
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
 
                 }catch(Exception e){}
 
@@ -134,6 +151,7 @@ public class LocationService extends Service {
         };
         Thread thread2 = new Thread(runnable1);
         thread2.start();
+
         return START_STICKY;
     }
     @Override
@@ -454,10 +472,9 @@ public class LocationService extends Service {
                 while(scan.hasNext())
                     str += scan.nextLine();
                 scan.close();
-               // JSONArray arr = new JSONArray(str);
+
                 JSONObject obj = new JSONObject(str);
-                //for (int i = 0; i < obj.length(); i++){
-                    //obj = arr.getJSONObject(i);
+
                     JSONObject obj2 = obj.getJSONObject("geometry");
                     JSONArray obj3 = obj2.getJSONArray("coordinates");
                     ArrayList<LatLng> latLngList = new ArrayList<>();
@@ -468,46 +485,16 @@ public class LocationService extends Service {
                        double lon = arr.getDouble(1);
                        if(lat != 0.0)
                             latLngList.add(new LatLng(lon, lat));
-                        /* for(int j = 0; j < arr.length(); j++ ){
-                            latLngList.add(arr.getDouble(j));
-                        }*/
-                    }
+                        }
                     Collections.reverse(latLngList);
                     latLngList.subList(ROUTE_LENGTH, latLngList.size()).clear();
-                //}
-                /*
-                    InputStream responseBody = connection.getInputStream();
 
-                    InputStreamReader responseBodyReader =
-                            new InputStreamReader(responseBody, StandardCharsets.UTF_8);
-
-                    JsonReader jsonReader = new JsonReader(responseBodyReader);
-
-                    jsonReader.beginObject();
-                    //List <Double> coords = new ArrayList<>();
-                    double[] coords = new double[10];
-                    JSONArray arr = new JSONArray();
-                    JSONObject obj = new JSONObject();
-                    String str = new String();
-                    try {
-                        while (jsonReader.hasNext()) {
-                            obj.append("coordinates", jsonReader.nextString());
-                            //String key = jsonReader.nextName();
-                            jsonReader.close();
-                        if (key.equals("coordinates")) {
-                            coords = jsonReader.nextDouble();
-                        }
-                        */
                         Intent i = new Intent("Route");
                         Bundle b = new Bundle();
                         b.putParcelableArrayList("Route", latLngList );
                         i.putExtra("Route", b);
                         LocalBroadcastManager.getInstance(this).sendBroadcast(i);
 
-                    /*
-                        }
-                    } catch (Exception e) {
-                    }*/
                 } else {
                 }
             }
@@ -517,5 +504,51 @@ public class LocationService extends Service {
             e.printStackTrace();
         }
 
+    }
+
+    public void powerService() throws ParseException {
+        Calendar rightNow = Calendar.getInstance();
+        float sinceMidnight = rightNow.getTimeInMillis();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date date = sdf.parse(last_update);
+        float millis = date.getTime();
+        try{
+            MapsActivity.onOff.setText("OFF | ");
+            erotus = sinceMidnight - millis;
+            MapsActivity.onOff.setText("ON  | ");
+            stopTimer();
+            startTimer();
+            if (erotus > 5000) {
+                MapsActivity.onOff.setText("OFF | ");
+            } else {
+                MapsActivity.onOff.setText("ON  | ");
+                }
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+    private void stopTimer(){
+        if(timer != null){
+            timer.cancel();
+            timer.purge();
+        }
+    }
+    private void startTimer(){
+        timer = new Timer();
+        timerTask = new TimerTask() {
+            public void run() {
+                handler.post(new Runnable() {
+                    public void run(){
+                        //your code is here
+
+
+                        //stopTimer();
+                        MapsActivity.onOff.setText("OFF | ");
+
+                    }
+                });
+            }
+        };
+        timer.schedule(timerTask, 5000, 5000);
     }
 }

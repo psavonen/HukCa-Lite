@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.ExoPlayer;
@@ -37,10 +38,12 @@ public class VideoActivity extends Activity {
 
     private Button vaihto;
     private Button takaisin;
-    private Button yovalo;
+    private Button yonako;
+
 
     private boolean switcher = false;
     private boolean nightVision = false;
+    private boolean led = false;
 
     private final String CONTROL_URL_BASE = "https://toor.hopto.org/api/v1/control";
 
@@ -52,10 +55,11 @@ public class VideoActivity extends Activity {
     exoplayerTwoStreams();
         vaihto = findViewById(R.id.connect);
         takaisin = findViewById(R.id.takaisin);
-        yovalo = findViewById(R.id.yovalo);
+        yonako = findViewById(R.id.yonako);
 
-        yovalo.setOnClickListener(v -> {
+        yonako.setOnClickListener(v -> {
             String urli = CONTROL_URL_BASE + "/" + MapsActivity.srnumero + "/night_vision/";
+            System.out.println(urli);
             if(!nightVision){
                 setControl(urli + "1");
                 nightVision = true;
@@ -114,6 +118,7 @@ public class VideoActivity extends Activity {
 
         playerView = findViewById(R.id.player);
         playerView.hideController();
+        playerView.setUseController(false);
         playerView.setPlayer(player);
         player.addMediaItem(firstStream);
 
@@ -127,6 +132,7 @@ public class VideoActivity extends Activity {
                 .setLoadControl(loadControl)
                 .build();
         playerView2 = findViewById(R.id.player2);
+        playerView2.setUseController(false);
         playerView2.hideController();
         playerView2.setPlayer(player2);
 
@@ -137,6 +143,9 @@ public class VideoActivity extends Activity {
         player2.play();
         playerView.setVisibility(View.VISIBLE);
         playerView2.setVisibility(View.INVISIBLE);
+        Toast.makeText(VideoActivity.this,
+                "Pieni hetki, video yhdistyy." ,
+                Toast.LENGTH_LONG).show();
     }
     private void setControl(String url){
         String encoded = Base64.getEncoder().encodeToString(("susipurkki:susipurkki").getBytes(StandardCharsets.UTF_8));

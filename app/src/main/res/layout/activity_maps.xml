@@ -20,9 +20,8 @@
 
     <Button
         android:id="@+id/connect"
-        android:layout_width="450dp"
+        android:layout_width="370dp"
         android:layout_height="match_parent"
-
         android:layout_alignParentLeft="true"
         android:layout_alignParentBottom="true"
         android:background="@android:color/transparent" />
@@ -77,7 +76,8 @@
         android:layout_width="wrap_content"
         android:background="#000000"
         android:layout_height="wrap_content"
-        android:layout_marginTop="250dp"
+        android:gravity="bottom"
+        android:layout_alignParentBottom="true"
         android:text=""
         android:textSize="10pt"/>
 
@@ -90,17 +90,7 @@
         android:secondaryProgressTint="#ffffff"
         android:layout_marginTop="2dp"
         />
-    <ImageButton
-        android:id="@+id/zoom"
-        android:layout_width="80dp"
-        android:layout_below="@id/battery"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
-        android:layout_marginEnd="1dp"
-        android:layout_toStartOf="@+id/aani"
-        android:src="@drawable/fullscreen_black_24dp"
-        android:visibility="invisible"
-        />
+
     <ImageButton
         android:id="@+id/aani"
         android:layout_width="80dp"
@@ -109,7 +99,7 @@
         android:layout_marginTop="5dp"
         android:layout_marginEnd="1dp"
         android:layout_toStartOf="@+id/yovalo"
-        android:src="@drawable/volume_up_black_24dp"
+        android:src="@drawable/volume_off_black_24dp"
         android:visibility="invisible"
         />
     <ImageButton
@@ -130,7 +120,7 @@
         android:layout_marginTop="5dp"
         android:layout_toStartOf="@id/toiminnot"
         android:layout_width="80dp"
-        android:layout_height="wrap_content"
+        android:layout_height="68dp"
         android:src="@drawable/flashlight_off_40"
         android:visibility="invisible"
         />
@@ -142,7 +132,7 @@
         android:layout_marginTop="5dp"
         android:layout_width="80dp"
         android:layout_height="wrap_content"
-        android:src="@drawable/bedtime_black_24dp"
+        android:src="@drawable/brightness_7_black_24dp"
         android:visibility="invisible"
         />
 
@@ -158,6 +148,18 @@
         android:text="Koira"
         android:visibility="invisible"
         />
+    <ImageButton
+        android:id="@+id/zoom"
+        android:layout_width="80dp"
+        android:layout_marginTop="5dp"
+        android:layout_below="@id/led"
+        android:layout_height="wrap_content"
+        android:layout_toStartOf="@+id/toiminnot"
+        android:src="@drawable/fullscreen_black_24dp"
+        android:translationZ="1dp"
+        android:visibility="invisible"
+
+        android:contentDescription="TODO" />
 
     <Button
         android:id="@+id/toiminnot"

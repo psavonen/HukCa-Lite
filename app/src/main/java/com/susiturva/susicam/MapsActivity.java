@@ -82,6 +82,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private TextView koiraNopeus;
     private TextView omaNopeus;
     private TextView vmatka;
+    public static TextView onOff;
     private StyledPlayerView playerView;
     private StyledPlayerView playerView2;
     private StyledPlayerView playerViewAudio;
@@ -216,7 +217,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         btnSwitch = findViewById(R.id.connect);
         koira = findViewById(R.id.keskitaKoiraan);
-        lahetys = findViewById(R.id.lahetys);
+        lahetys = (ImageButton) findViewById(R.id.lahetys);
         valot = (ImageButton) findViewById(R.id.led);
         yovalo = (ImageButton) findViewById(R.id.yovalo);
         aani = (ImageButton) findViewById(R.id.aani);
@@ -225,6 +226,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         koiraNopeus = findViewById(R.id.koiraNopeus);
         omaNopeus = findViewById(R.id.omaNopeus);
         vmatka = findViewById(R.id.valimatka);
+        onOff = findViewById(R.id.onOff);
         toiminnot = findViewById(R.id.toiminnot);
         toiminnot.setText("<");
        /* if(getActionBar() != null){
@@ -269,7 +271,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 koira.setVisibility(View.VISIBLE);
                 aani.setVisibility(View.VISIBLE);
                 lahetys.setVisibility(View.VISIBLE);
-                //fullscreen.setVisibility(View.VISIBLE);
+                if (diagonalInches <= SCREEN_SIZE_THRESHOLD) {
+                    fullscreen.setVisibility(View.VISIBLE);
+                }
                 piilossa = false;
                 toiminnot.setText(">");
             } else {
@@ -277,7 +281,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 yovalo.setVisibility(View.INVISIBLE);
                 koira.setVisibility(View.INVISIBLE);
                 aani.setVisibility(View.INVISIBLE);
-                //fullscreen.setVisibility(View.INVISIBLE);
+                if (diagonalInches <= SCREEN_SIZE_THRESHOLD) {
+                    fullscreen.setVisibility(View.INVISIBLE);
+                }
                 lahetys.setVisibility(View.INVISIBLE);
                 piilossa = true;
                 toiminnot.setText("<");
@@ -286,24 +292,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         koira.setOnClickListener(v -> firstTime = true);
         lahetys.setOnClickListener(v -> {
-            String sound = "machinegun";
-            /*int max = 3;
-            int min = 1;
-            int range = max - min + 1;
-            int noise = (int)(Math.random() * range) + min;
-            switch (noise){
-                case 1:
-                    sound = "police";
-                    break;
-                case 2:
-                    sound = "pistol";
-                    break;
-                case 3:
-                    sound = "machinegun";
-                    break;
-                default:
-                    throw new IllegalStateException("Unexpected value: " + noise);
-            }*/
+
+            String sound = "pistol";
+
             String urli = URL_BASE + "/soundeffect/" + srnumero + "/" + sound + "/" + SOUND_EFFECT_VOLUME;
             setControl(urli);
             Toast.makeText(MapsActivity.this,
@@ -349,10 +340,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 irLeds = false;
             }
         });
-        /*fullscreen.setOnClickListener(v -> {
+
+        fullscreen.setOnClickListener(v -> {
             Intent i = new Intent(MapsActivity.this, VideoActivity.class);
             startActivity(i);
-        });*/
+        });
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);

@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:keepScreenOn="true">
+    android:keepScreenOn="true"
     tools:context=".VideoActivity">
   <!-- <WebView
         android:id="@+id/streamview"
@@ -66,12 +66,12 @@
 
         />
     <Button
-        android:id="@+id/yovalo"
+        android:id="@+id/yonako"
         android:layout_marginLeft="102dp"
         android:layout_width="100dp"
         android:layout_height="60dp"
         android:src="@drawable/fullscreen_exit_black_24dp"
-        android:text="Yövalo"
+        android:text="Yönäkö"
 
         />
 </FrameLayout>
