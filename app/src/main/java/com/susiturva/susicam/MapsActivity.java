@@ -91,7 +91,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ArrayList<LatLng>route = new ArrayList<>();
     private Polyline gpsTrack;
     private HashMap<String, Marker> mMarkers = new HashMap<>();
-    private boolean firstTime = true;
     private Double alt;
     private Double speed;
     private Double bearing;
@@ -126,6 +125,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private List<MyDBHandler> sarjanumerot = new ArrayList<>();
     public static String srnumero;
 
+    public static boolean firstTime = true;
     private boolean switcher = false;
     private boolean piilossa = true;
     private boolean sound = false;

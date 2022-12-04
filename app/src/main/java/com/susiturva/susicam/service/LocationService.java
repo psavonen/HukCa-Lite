@@ -74,6 +74,8 @@ public class LocationService extends Service {
     private TimerTask timerTask;
     private Handler handler = new Handler();
 
+    private Thread thread, thread1, thread2, thread3;
+
     public LocationService() {
     }
 
@@ -120,9 +122,32 @@ public class LocationService extends Service {
             }
         };
 
-        Thread thread = new Thread(runnable);
+        thread = new Thread(runnable);
         thread.start();
-        Thread thread1 = new Thread(new Runnable() {
+        Runnable runnable2 = () -> {
+
+
+                try {
+
+                    try {
+                        powerService();
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+
+                }catch(Exception e){}
+
+                try {
+                    Thread.sleep(3000);
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+        };
+        thread3 = new Thread(runnable2);
+        thread3.start();
+        thread1 = new Thread(new Runnable() {
             @Override
             public void run() {
                 try{
@@ -149,7 +174,7 @@ public class LocationService extends Service {
                 }
             }
         };
-        Thread thread2 = new Thread(runnable1);
+        thread2 = new Thread(runnable1);
         thread2.start();
 
         return START_STICKY;
@@ -513,7 +538,7 @@ public class LocationService extends Service {
         Date date = sdf.parse(last_update);
         float millis = date.getTime();
         try{
-            MapsActivity.onOff.setText("OFF | ");
+            //MapsActivity.onOff.setText("OFF | ");
             erotus = sinceMidnight - millis;
             MapsActivity.onOff.setText("ON  | ");
             stopTimer();
@@ -522,7 +547,8 @@ public class LocationService extends Service {
                 MapsActivity.onOff.setText("OFF | ");
             } else {
                 MapsActivity.onOff.setText("ON  | ");
-                }
+                MapsActivity.firstTime = true;
+            }
         }catch(Exception e){
             e.printStackTrace();
         }
