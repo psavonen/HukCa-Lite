@@ -74,7 +74,7 @@ public class LocationService extends Service {
     private TimerTask timerTask;
     private Handler handler = new Handler();
 
-    private Thread thread, thread1, thread2, thread3;
+    private Thread thread, thread1, thread2;
 
     public LocationService() {
     }
@@ -105,13 +105,7 @@ public class LocationService extends Service {
             while(runner) {
                 try {
                     location(serial_hash);
-                    try {
-                        powerService();
-                    } catch (ParseException e) {
-                        e.printStackTrace();
-                    }
-
-                }catch(Exception e){}
+                    }catch(Exception e){}
 
                 try {
                     Thread.sleep(2000);
@@ -124,29 +118,7 @@ public class LocationService extends Service {
 
         thread = new Thread(runnable);
         thread.start();
-        Runnable runnable2 = () -> {
 
-
-                try {
-
-                    try {
-                        powerService();
-                    } catch (ParseException e) {
-                        e.printStackTrace();
-                    }
-
-                }catch(Exception e){}
-
-                try {
-                    Thread.sleep(3000);
-
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-        };
-        thread3 = new Thread(runnable2);
-        thread3.start();
         thread1 = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -529,52 +501,5 @@ public class LocationService extends Service {
             e.printStackTrace();
         }
 
-    }
-
-    public void powerService() throws ParseException {
-        Calendar rightNow = Calendar.getInstance();
-        float sinceMidnight = rightNow.getTimeInMillis();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Date date = sdf.parse(last_update);
-        float millis = date.getTime();
-        try{
-            //MapsActivity.onOff.setText("OFF | ");
-            erotus = sinceMidnight - millis;
-            MapsActivity.onOff.setText("ON  | ");
-            stopTimer();
-            startTimer();
-            if (erotus > 5000) {
-                MapsActivity.onOff.setText("OFF | ");
-            } else {
-                MapsActivity.onOff.setText("ON  | ");
-                MapsActivity.firstTime = true;
-            }
-        }catch(Exception e){
-            e.printStackTrace();
-        }
-    }
-    private void stopTimer(){
-        if(timer != null){
-            timer.cancel();
-            timer.purge();
-        }
-    }
-    private void startTimer(){
-        timer = new Timer();
-        timerTask = new TimerTask() {
-            public void run() {
-                handler.post(new Runnable() {
-                    public void run(){
-                        //your code is here
-
-
-                        //stopTimer();
-                        MapsActivity.onOff.setText("OFF | ");
-
-                    }
-                });
-            }
-        };
-        timer.schedule(timerTask, 5000, 5000);
     }
 }

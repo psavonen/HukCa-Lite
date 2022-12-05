@@ -69,10 +69,16 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -152,6 +158,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public static String stream1;
     public static String stream2;
+
+    private Timer timer;
+    private TimerTask timerTask;
+    private Handler handler = new Handler();
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -229,18 +240,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         onOff = findViewById(R.id.onOff);
         toiminnot = findViewById(R.id.toiminnot);
         toiminnot.setText("<");
-       /* if(getActionBar() != null){
-            //getActionBar().hide();
-        }*/
+
         startService();
-       /* new Handler().postDelayed(() ->
-                        exoplayerTwoStreams(),
-                4000);
-        new Handler().postDelayed(() ->
-                        exoplayerAudio(),
-                4000);*/
+
         try {
-            if (diagonalInches > SCREEN_SIZE_THRESHOLD) {
+            if (diagonalInches >= SCREEN_SIZE_THRESHOLD) {
                 playerView.setVisibility(View.VISIBLE);
                 playerView2.setVisibility(View.VISIBLE);
             }
@@ -449,6 +453,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             ir_active = b.getInt("Ir_active");
             try {
                 setBattery();
+                powerService();
                 koiraNopeus.setText(speed.toString());
                 if (checkGPSandNetwork()) {
                     try{
@@ -818,6 +823,52 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     .show();
         }
         return gps_enabled;
+    }
+    public void powerService() throws ParseException {
+        Calendar rightNow = Calendar.getInstance();
+        float sinceMidnight = rightNow.getTimeInMillis();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date date = sdf.parse(last_update);
+        float millis = date.getTime();
+        try{
+            //MapsActivity.onOff.setText("OFF | ");
+            float erotus = sinceMidnight - millis;
+           onOff.setText("ON  | ");
+            stopTimer();
+            startTimer();
+            if (erotus > 5000) {
+                onOff.setText("OFF | ");
+            } else {
+                onOff.setText("ON  | ");
+                //MapsActivity.firstTime = true;
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+    private void stopTimer(){
+        if(timer != null){
+            timer.cancel();
+            timer.purge();
+        }
+    }
+    private void startTimer(){
+        timer = new Timer();
+        timerTask = new TimerTask() {
+            public void run() {
+                handler.post(new Runnable() {
+                    public void run(){
+                        //your code is here
+
+
+                        //stopTimer();
+                        MapsActivity.onOff.setText("OFF | ");
+
+                    }
+                });
+            }
+        };
+        timer.schedule(timerTask, 5000, 5000);
     }
 }
 
