@@ -139,7 +139,7 @@
         android:id="@+id/lahetys"
         android:layout_width="80dp"
         android:layout_below="@id/battery"
-        android:layout_height="wrap_content"
+        android:layout_height="68dp"
         android:layout_marginTop="5dp"
         android:layout_marginEnd="1dp"
         android:layout_toStartOf="@+id/aani"
@@ -182,7 +182,17 @@
         android:text="Koira"
         android:visibility="invisible"
         />
-
+    <ImageButton
+        android:id="@+id/sendSound"
+        android:layout_width="80dp"
+        android:layout_marginTop="5dp"
+        android:layout_below="@id/led"
+        android:layout_height="wrap_content"
+        android:layout_toStartOf="@+id/toiminnot"
+        android:src="@drawable/record_voice_over_black_24dp"
+        android:translationZ="1dp"
+        android:visibility="invisible"
+        />
     <Button
         android:id="@+id/toiminnot"
         android:layout_alignParentRight="true"
