@@ -16,7 +16,10 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.MediaPlayer;
+import android.media.MediaRecorder;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
@@ -62,10 +65,20 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.android.gms.maps.model.TileProvider;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.methods.HttpPost;
 import com.susiturva.susicam.service.LocationService;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -76,7 +89,10 @@ import java.util.Base64;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -125,7 +141,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private String stream_1_key;
     private String stream_2_key;
     private String audio_key;
-
+    private String audioFilename;
 
     private DatabaseHelper db;
     private List<MyDBHandler> sarjanumerot = new ArrayList<>();
@@ -148,6 +164,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ImageButton yovalo;
     private ImageButton fullscreen;
     private ImageButton lahetys;
+    private ImageButton sendSound;
 
     private ExoPlayer player;
     private ExoPlayer player2;
@@ -162,6 +179,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Timer timer;
     private TimerTask timerTask;
     private Handler handler = new Handler();
+
+    private String AudioSavePathInDevice = null;
+    private MediaRecorder mediaRecorder ;
+    private Random random ;
+    private String RandomAudioFileName = "ABCDEFGHIJKLMNOP";
+    public static final int RequestPermissionCode = 1;
+    private MediaPlayer mediaPlayer ;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -233,6 +257,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         yovalo = (ImageButton) findViewById(R.id.yovalo);
         aani = (ImageButton) findViewById(R.id.aani);
         fullscreen = (ImageButton) findViewById(R.id.zoom);
+        sendSound = (ImageButton) findViewById(R.id.sendSound);
         battery = findViewById(R.id.battery);
         koiraNopeus = findViewById(R.id.koiraNopeus);
         omaNopeus = findViewById(R.id.omaNopeus);
@@ -279,6 +304,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     fullscreen.setVisibility(View.VISIBLE);
                 }
                 piilossa = false;
+                sendSound.setVisibility(View.VISIBLE);
                 toiminnot.setText(">");
             } else {
                 valot.setVisibility(View.INVISIBLE);
@@ -289,6 +315,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     fullscreen.setVisibility(View.INVISIBLE);
                 }
                 lahetys.setVisibility(View.INVISIBLE);
+                sendSound.setVisibility(View.INVISIBLE);
                 piilossa = true;
                 toiminnot.setText("<");
             }
@@ -306,6 +333,47 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     Toast.LENGTH_LONG).show();
 
         } );
+        sendSound.setOnClickListener(view -> {
+            if (!broadcast) {
+                Date date = new Date();
+                AudioSavePathInDevice = getApplicationContext().getFilesDir().getPath() + "/" + date.getTime() + "Audio.mp3";
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.RECORD_AUDIO },
+                            10);
+                } else {
+                    MediaRecorderReady();
+                    try {
+                        mediaRecorder.prepare();
+                        mediaRecorder.start();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                                  }
+                try {
+
+                } catch (IllegalStateException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                Toast.makeText(MapsActivity.this, "Nauhoitetaan ääntä",
+                        Toast.LENGTH_LONG).show();
+                sendSound.setImageResource(R.drawable.voice_over_off_black_24dp);
+                broadcast = true;
+            }else{
+                try {
+                    mediaRecorder.stop();
+                }catch(Exception e){
+                    e.printStackTrace();
+                }
+                Map<String, String> params = new HashMap<String, String>(2);
+                params.put("file", AudioSavePathInDevice);
+                String result = sendAudio(AudioSavePathInDevice, params);
+                deleteAudio(result);
+                sendSound.setImageResource(R.drawable.record_voice_over_black_24dp);
+                broadcast = false;
+            }
+        });
         aani.setOnClickListener(v -> {
             if (!sound) {
                 playerAudio.prepare();
@@ -694,7 +762,130 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         thread.start();
 
     }
+    private String sendAudio(String filepath, Map<String, String> params) {
+        final InputStream[] inputStream = {null};
+        String encoded = Base64.getEncoder().encodeToString(("susipurkki:susipurkki").getBytes(StandardCharsets.UTF_8));
+        String boundary = "*****" + Long.toString(System.currentTimeMillis()) + "*****";
+        String twoHyphens = "--";
+        String lineEnd = "\r\n";
+        final String[] result = {""};
 
+        final int[] bytesRead = new int[1];
+        final int[] bytesAvailable = new int[1];
+        final int[] bufferSize = new int[1];
+        final byte[][] buffer = new byte[1][1];
+        int maxBufferSize = 1 * 1024 * 1024;
+
+        String[] q = filepath.split("/");
+        int idx = q.length - 1;
+
+        Thread thread = new Thread(() -> {
+            try {
+                File file = new File(filepath);
+
+
+                FileInputStream fileInputStream = new FileInputStream(file);
+
+                URL on = new URL("https://toor.hopto.org/api/v1/audio_delivery/" + srnumero);
+                HttpsURLConnection connection = (HttpsURLConnection) on.openConnection();
+                connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+                connection.setRequestMethod("POST");
+                connection.setRequestProperty("Authorization", "Basic " + encoded);
+                connection.setRequestProperty("x-apikey", "awidjilherg");
+                connection.setDoInput(true);
+                connection.setDoOutput(true);
+                connection.setUseCaches(false);
+                connection.setRequestProperty("Connection", "Keep-Alive");
+                connection.setRequestProperty("User-Agent", "Android Multipart HTTP Client 1.0");
+                DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream());
+                outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+                outputStream.writeBytes("Content-Disposition: form-data; name=\"file\"; " + "filename=\"" + q[idx] + "\"" + lineEnd);
+                outputStream.writeBytes("Content-Type: " + "audio/mpeg" + lineEnd);
+                outputStream.writeBytes("Content-Transfer-Encoding: binary" + lineEnd);
+
+                outputStream.writeBytes(lineEnd);
+
+                bytesAvailable[0] = fileInputStream.available();
+                bufferSize[0] = Math.min(bytesAvailable[0], maxBufferSize);
+                buffer[0] = new byte[bufferSize[0]];
+
+                bytesRead[0] = fileInputStream.read(buffer[0], 0, bufferSize[0]);
+                while (bytesRead[0] > 0) {
+                    outputStream.write(buffer[0], 0, bufferSize[0]);
+                    bytesAvailable[0] = fileInputStream.available();
+                    bufferSize[0] = Math.min(bytesAvailable[0], maxBufferSize);
+                    bytesRead[0] = fileInputStream.read(buffer[0], 0, bufferSize[0]);
+                }
+
+                outputStream.writeBytes(lineEnd);
+
+                // Upload POST Data
+                Iterator<String> keys = params.keySet().iterator();
+                while (keys.hasNext()) {
+                    String key = keys.next();
+                    String value = params.get(key);
+
+                    outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+                    outputStream.writeBytes("Content-Type: multipart/form-data;" + boundary);
+                    outputStream.writeBytes("Content-Disposition: form-data; name=\"file\"; filename=\"" +AudioSavePathInDevice + "\"" + lineEnd);
+                    outputStream.writeBytes("Content-Type: audio/mpeg" + boundary);
+
+                }
+
+                outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
+
+
+                if (200 != connection.getResponseCode()) {
+                    System.out.println(connection.getResponseMessage());
+                    throw new Exception("Failed to upload code:" + connection.getResponseCode() + " " + connection.getResponseMessage());
+                }
+                inputStream[0] = connection.getInputStream();
+
+                result[0] = this.convertStreamToString(inputStream[0]);
+                audioFilename = result[0];
+                audioFilename = audioFilename.replace("filename", "").replaceAll("\"", "").replaceAll("\\}", "").replaceAll("\\{", "").replaceAll(":", "");
+
+                fileInputStream.close();
+                inputStream[0].close();
+                outputStream.flush();
+                outputStream.close();
+
+
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        thread.start();
+        return audioFilename;
+    }
+    public void deleteAudio(String filename){
+        String encoded = Base64.getEncoder().encodeToString(("susipurkki:susipurkki").getBytes(StandardCharsets.UTF_8));
+        Thread thread = new Thread(() -> {
+            try {
+
+                URL on = new URL("https://toor.hopto.org/api/v1/audio_delivery/" + srnumero + "/" + filename);
+                HttpsURLConnection connection = (HttpsURLConnection) on.openConnection();
+                connection.setRequestMethod("DELETE");
+                connection.setDoOutput(true);
+                connection.setRequestProperty("Authorization", "Basic " + encoded);
+                connection.setRequestProperty("x-apikey", "awidjilherg");
+                if (connection.getResponseCode() == 200) {
+                    InputStream responseBody = connection.getInputStream();
+                }
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        thread.start();
+
+    }
     public void setBattery() {
         Drawable progressDraw = battery.getProgressDrawable().mutate();
         battery.setMax(100);
@@ -869,6 +1060,34 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         };
         timer.schedule(timerTask, 5000, 5000);
+    }
+
+    public void MediaRecorderReady(){
+        mediaRecorder=new MediaRecorder();
+        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+        mediaRecorder.setOutputFile(AudioSavePathInDevice);
+    }
+    private String convertStreamToString(InputStream is) {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        StringBuilder sb = new StringBuilder();
+
+        String line = null;
+        try {
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return sb.toString();
     }
 }
 
