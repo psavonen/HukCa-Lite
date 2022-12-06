@@ -369,7 +369,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Map<String, String> params = new HashMap<String, String>(2);
                 params.put("file", AudioSavePathInDevice);
                 String result = sendAudio(AudioSavePathInDevice, params);
-                deleteAudio(result);
+                playOrDeleteAudio(result, "POST");
+                playOrDeleteAudio(result, "DELETE");
                 sendSound.setImageResource(R.drawable.record_voice_over_black_24dp);
                 broadcast = false;
             }
@@ -863,14 +864,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         thread.start();
         return audioFilename;
     }
-    public void deleteAudio(String filename){
+   public void playOrDeleteAudio(String filename, String method){
         String encoded = Base64.getEncoder().encodeToString(("susipurkki:susipurkki").getBytes(StandardCharsets.UTF_8));
         Thread thread = new Thread(() -> {
             try {
 
                 URL on = new URL("https://toor.hopto.org/api/v1/audio_delivery/" + srnumero + "/" + filename);
                 HttpsURLConnection connection = (HttpsURLConnection) on.openConnection();
-                connection.setRequestMethod("DELETE");
+                connection.setRequestMethod(method);
                 connection.setDoOutput(true);
                 connection.setRequestProperty("Authorization", "Basic " + encoded);
                 connection.setRequestProperty("x-apikey", "awidjilherg");
@@ -1067,6 +1068,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
         mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+        mediaRecorder.setAudioChannels(1);
         mediaRecorder.setOutputFile(AudioSavePathInDevice);
     }
     private String convertStreamToString(InputStream is) {
