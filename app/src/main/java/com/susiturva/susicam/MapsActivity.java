@@ -181,6 +181,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Handler handler = new Handler();
 
     private String AudioSavePathInDevice = null;
+    private String audiofile;
     private MediaRecorder mediaRecorder ;
     private Random random ;
     private String RandomAudioFileName = "ABCDEFGHIJKLMNOP";
@@ -336,7 +337,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         sendSound.setOnClickListener(view -> {
             if (!broadcast) {
                 Date date = new Date();
-                AudioSavePathInDevice = getApplicationContext().getFilesDir().getPath() + "/" + date.getTime() + "Audio.mp3";
+                audiofile = date.getTime() + "Audio.mp3";
+                AudioSavePathInDevice = getApplicationContext().getFilesDir().getPath() + "/" + audiofile;
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
                         != PackageManager.PERMISSION_GRANTED) {
                     ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.RECORD_AUDIO },
@@ -369,8 +371,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Map<String, String> params = new HashMap<String, String>(2);
                 params.put("file", AudioSavePathInDevice);
                 String result = sendAudio(AudioSavePathInDevice, params);
-                playOrDeleteAudio(result, "POST");
-                playOrDeleteAudio(result, "DELETE");
+                //playOrDeleteAudio(result, "POST");
+                new Handler().postDelayed(() ->
+                        playOrDeleteAudio(result, "DELETE"),
+                        10000);
+
+                boolean deleted = deleteFile(audiofile);
                 sendSound.setImageResource(R.drawable.record_voice_over_black_24dp);
                 broadcast = false;
             }
