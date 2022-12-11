@@ -21,6 +21,7 @@ import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.view.Menu;
@@ -337,7 +338,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         sendSound.setOnClickListener(view -> {
             if (!broadcast) {
                 Date date = new Date();
-                audiofile = date.getTime() + "Audio.mp3";
+                audiofile = date.getTime() + "Audio.3gp";
                 AudioSavePathInDevice = getApplicationContext().getFilesDir().getPath() + "/" + audiofile;
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
                         != PackageManager.PERMISSION_GRANTED) {
@@ -352,16 +353,29 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         e.printStackTrace();
                     }
                                   }
-                try {
-
-                } catch (IllegalStateException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
                 Toast.makeText(MapsActivity.this, "Nauhoitetaan ääntä",
                         Toast.LENGTH_LONG).show();
                 sendSound.setImageResource(R.drawable.voice_over_off_black_24dp);
                 broadcast = true;
+                try {
+                    final Handler handler = new Handler(Looper.getMainLooper());
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            mediaRecorder.stop();
+                            Map<String, String> params = new HashMap<String, String>(2);
+                            params.put("file", AudioSavePathInDevice);
+                            String result = sendAudio(AudioSavePathInDevice, params);
+                            Toast.makeText(MapsActivity.this, "Lähetetään ääntä",
+                                    Toast.LENGTH_LONG).show();
+                            sendSound.setImageResource(R.drawable.record_voice_over_black_24dp);
+                            broadcast = false;
+                        }
+                    }, 5000);
+
+                }catch (Exception e){
+
+                }
             }else{
                 try {
                     mediaRecorder.stop();
@@ -371,12 +385,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Map<String, String> params = new HashMap<String, String>(2);
                 params.put("file", AudioSavePathInDevice);
                 String result = sendAudio(AudioSavePathInDevice, params);
-                //playOrDeleteAudio(result, "POST");
-                new Handler().postDelayed(() ->
-                        playOrDeleteAudio(result, "DELETE"),
-                        10000);
-
-                boolean deleted = deleteFile(audiofile);
+                //playAndDeleteAudio();
+                Toast.makeText(MapsActivity.this, "Lähetetään ääntä",
+                        Toast.LENGTH_LONG).show();
                 sendSound.setImageResource(R.drawable.record_voice_over_black_24dp);
                 broadcast = false;
             }
@@ -790,10 +801,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             try {
                 File file = new File(filepath);
 
-
                 FileInputStream fileInputStream = new FileInputStream(file);
 
-                URL on = new URL("https://toor.hopto.org/api/v1/audio_delivery/" + srnumero);
+                URL on = new URL("https://toor.hopto.org/api/v1/audio_delivery/" + srnumero + "?force_push=false&auto_play=true&auto_delete=true&volume=100");
                 HttpsURLConnection connection = (HttpsURLConnection) on.openConnection();
                 connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
                 connection.setRequestMethod("POST");
@@ -840,7 +850,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
 
                 outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
-
+                int tuu = connection.getResponseCode();
+                String prese = connection.getResponseMessage();
 
                 if (200 != connection.getResponseCode()) {
                     System.out.println(connection.getResponseMessage());
@@ -856,7 +867,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 inputStream[0].close();
                 outputStream.flush();
                 outputStream.close();
-
+                boolean deleted = deleteFile(audiofile);
 
 
             } catch (MalformedURLException e) {
@@ -870,14 +881,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         thread.start();
         return audioFilename;
     }
-   public void playOrDeleteAudio(String filename, String method){
+   public void playAndDeleteAudio(){
         String encoded = Base64.getEncoder().encodeToString(("susipurkki:susipurkki").getBytes(StandardCharsets.UTF_8));
         Thread thread = new Thread(() -> {
             try {
 
-                URL on = new URL("https://toor.hopto.org/api/v1/audio_delivery/" + srnumero + "/" + filename);
+                URL on = new URL("https://toor.hopto.org/api/v1/audio_delivery/" + srnumero + "/auto_play=true&auto_delete=true");
                 HttpsURLConnection connection = (HttpsURLConnection) on.openConnection();
-                connection.setRequestMethod(method);
+                connection.setRequestMethod("POST");
                 connection.setDoOutput(true);
                 connection.setRequestProperty("Authorization", "Basic " + encoded);
                 connection.setRequestProperty("x-apikey", "awidjilherg");
@@ -1072,7 +1083,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void MediaRecorderReady(){
         mediaRecorder=new MediaRecorder();
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
         mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
         mediaRecorder.setAudioChannels(1);
         mediaRecorder.setOutputFile(AudioSavePathInDevice);

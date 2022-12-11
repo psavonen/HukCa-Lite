@@ -36,7 +36,8 @@ public class Therion extends Activity {
         int PERMISSION_ALL = 1;
         String[] PERMISSIONS = {
                 Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                Manifest.permission.ACCESS_FINE_LOCATION
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.RECORD_AUDIO
         };
         if (!hasPermissions(this, PERMISSIONS)) {
             ActivityCompat.requestPermissions(com.susiturva.susicam.Therion.this, PERMISSIONS, PERMISSION_ALL);
