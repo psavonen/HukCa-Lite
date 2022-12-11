@@ -362,12 +362,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     handler.postDelayed(new Runnable() {
                         @Override
                         public void run() {
-                            mediaRecorder.stop();
-                            Map<String, String> params = new HashMap<String, String>(2);
-                            params.put("file", AudioSavePathInDevice);
-                            String result = sendAudio(AudioSavePathInDevice, params);
-                            Toast.makeText(MapsActivity.this, "Lähetetään ääntä",
-                                    Toast.LENGTH_LONG).show();
+                            try {
+                                mediaRecorder.stop();
+                                Map<String, String> params = new HashMap<String, String>(2);
+                                params.put("file", AudioSavePathInDevice);
+                                String result = sendAudio(AudioSavePathInDevice, params);
+                                Toast.makeText(MapsActivity.this, "Lähetetään ääntä",
+                                        Toast.LENGTH_LONG).show();
+                            }catch(Exception e){
+
+                            }
                             sendSound.setImageResource(R.drawable.record_voice_over_black_24dp);
                             broadcast = false;
                         }
