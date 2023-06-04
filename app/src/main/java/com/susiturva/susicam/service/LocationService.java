@@ -66,6 +66,9 @@ public class LocationService extends Service {
     public int front_video_activated;
     public int back_video_activated;
     public int audio_activated;
+    public int detected_id;
+    public int detected_ago;
+    public String detected_object;
     public String ip_address;
     private DatabaseHelper db;
     private List<MyDBHandler> sarjanumerot = new ArrayList<>();
@@ -271,8 +274,18 @@ public class LocationService extends Service {
                         if(audio_activatedKey.equalsIgnoreCase("audio_activated")){
                             audio_activated = jsonReader.nextInt();
                         }
-
-
+                        String detected_idKey = jsonReader.nextName();
+                        if(detected_idKey.equalsIgnoreCase("detected_id")){
+                            detected_id = jsonReader.nextInt();
+                        }
+                        String detected_objectKey = jsonReader.nextName();
+                        if(detected_objectKey.equalsIgnoreCase("detected_object")){
+                            detected_object = jsonReader.nextString();
+                        }
+                        String detected_agoKey = jsonReader.nextName();
+                        if(detected_agoKey.equalsIgnoreCase("detected_ago")){
+                            detected_ago = jsonReader.nextInt();
+                        }
                         LatLng latLng = new LatLng(lat, lng);
                         Intent i = new Intent("LocationUpdates");
                         Bundle b = new Bundle();
@@ -289,10 +302,11 @@ public class LocationService extends Service {
                         b.putInt("Back_video_activated", back_video_activated);
                         b.putInt("Audio_activated", audio_activated);
                         b.putParcelable("LatLng", latLng);
+                        b.putInt("Detected_ID", detected_id);
+                        b.putString("Detected_Object", detected_object);
+                        b.putInt("Detected_Ago", detected_ago);
                         i.putExtra("LatLng", b);
                         LocalBroadcastManager.getInstance(this).sendBroadcast(i);
-
-
                     }
                 }
                 catch(Exception e){}

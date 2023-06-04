@@ -10,6 +10,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
@@ -18,6 +20,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -31,6 +34,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -43,6 +47,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import com.ceylonlabs.imageviewpopup.ImagePopup;
 import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
@@ -76,6 +81,7 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -101,6 +107,7 @@ import javax.net.ssl.HttpsURLConnection;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener {
 
+    private ImageView detectionDialog;
     private GoogleMap mMap;
     private TextView koiraNopeus;
     private TextView omaNopeus;
@@ -125,6 +132,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private int bat_soc;
     private int active_streams;
     private int camera_mode;
+    private int checkId;
+    private int detected_id;
+    private int detected_ago;
     private int ir_active;
     private int My_PERMISSION_REQUEST_FINE_LOCATION = 0;
     private int My_PERMISSION_REQUEST_WRITE_ACCESS = 0;
@@ -134,6 +144,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ProgressBar battery;
     private Marker marker = null;
     private Marker puhelin;
+    private String detected_object;
     private String last_update;
     private String ip_address;
     private String rtsp_url_stream_1;
@@ -166,6 +177,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ImageButton fullscreen;
     private ImageButton lahetys;
     private ImageButton sendSound;
+    private ImageButton detection;
 
     private ExoPlayer player;
     private ExoPlayer player2;
@@ -173,7 +185,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private final String CONTROL_URL_BASE = "https://toor.hopto.org/api/v1/control";
     private final String URL_BASE = "https://toor.hopto.org/api/v1";
-
+    private final String USERNAME_PASSWORD = "susipurkki:susipurkki";
     public static String stream1;
     public static String stream2;
 
@@ -221,6 +233,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         myItem.setTitle("S/N: " + srnumero);
         return true;
     }
+   @SuppressLint("MissingInflatedId")
    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -267,6 +280,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         onOff = findViewById(R.id.onOff);
         toiminnot = findViewById(R.id.toiminnot);
         toiminnot.setText("<");
+        detection = findViewById(R.id.detection);
 
         startService();
 
@@ -322,7 +336,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 toiminnot.setText("<");
             }
         });
-
+        detection.setOnClickListener(view -> {
+            try {
+                Uri uri = Uri.parse(saveImageToDownloadFolder("detection" + detected_id, getImage()));
+                ImagePopup imagePopup = new ImagePopup(this);
+                imagePopup.setImageOnClickClose(true);
+                imagePopup.setImageURI(uri);
+            } catch (Exception e){
+                e.printStackTrace();
+            }
+        });
         koira.setOnClickListener(v -> firstTime = true);
         lahetys.setOnClickListener(v -> {
 
@@ -542,6 +565,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             camera_mode = b.getInt("Camera_mode");
             ir_active = b.getInt("Ir_active");
             try {
+                detected_id = b.getInt("Detected_ID");
+            } catch(Exception e){}
+            detected_object = b.getString("Detected_Object");
+            try {
+                detected_ago = b.getInt("Detected_Ago");
+            } catch(Exception e){}
+            try {
+                try {
+                    Detector();
+                } catch(Exception e){
+                    e.printStackTrace();
+                }
                 setBattery();
                 powerService();
                 koiraNopeus.setText(speed.toString());
@@ -764,7 +799,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void setControl(String url) {
-        String encoded = Base64.getEncoder().encodeToString(("susipurkki:susipurkki").getBytes(StandardCharsets.UTF_8));
+        String encoded = Base64.getEncoder().encodeToString((USERNAME_PASSWORD).getBytes(StandardCharsets.UTF_8));
         Thread thread = new Thread(() -> {
             try {
                 URL on = new URL(url);
@@ -786,7 +821,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
     private String sendAudio(String filepath, Map<String, String> params) {
         final InputStream[] inputStream = {null};
-        String encoded = Base64.getEncoder().encodeToString(("susipurkki:susipurkki").getBytes(StandardCharsets.UTF_8));
+        String encoded = Base64.getEncoder().encodeToString((USERNAME_PASSWORD).getBytes(StandardCharsets.UTF_8));
         String boundary = "*****" + Long.toString(System.currentTimeMillis()) + "*****";
         String twoHyphens = "--";
         String lineEnd = "\r\n";
@@ -807,7 +842,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 FileInputStream fileInputStream = new FileInputStream(file);
 
-                URL on = new URL("https://toor.hopto.org/api/v1/audio_delivery/" + srnumero + "?force_push=false&auto_play=true&auto_delete=true&volume=100");
+                URL on = new URL(URL_BASE + "/audio_delivery/" + srnumero + "?force_push=false&auto_play=true&auto_delete=true&volume=100");
                 HttpsURLConnection connection = (HttpsURLConnection) on.openConnection();
                 connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
                 connection.setRequestMethod("POST");
@@ -885,19 +920,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         thread.start();
         return audioFilename;
     }
-   public void playAndDeleteAudio(){
-        String encoded = Base64.getEncoder().encodeToString(("susipurkki:susipurkki").getBytes(StandardCharsets.UTF_8));
-        Thread thread = new Thread(() -> {
+   public Bitmap getImage(){
+        String encoded = Base64.getEncoder().encodeToString((USERNAME_PASSWORD).getBytes(StandardCharsets.UTF_8));
+       final Bitmap[] bitmap = new Bitmap[1];
+       Thread thread = new Thread(() -> {
             try {
 
-                URL on = new URL("https://toor.hopto.org/api/v1/audio_delivery/" + srnumero + "/auto_play=true&auto_delete=true");
+                URL on = new URL(URL_BASE + "/detector/download/" + srnumero + "/" + detected_id);
                 HttpsURLConnection connection = (HttpsURLConnection) on.openConnection();
-                connection.setRequestMethod("POST");
+                connection.setRequestMethod("GET");
                 connection.setDoOutput(true);
                 connection.setRequestProperty("Authorization", "Basic " + encoded);
                 connection.setRequestProperty("x-apikey", "awidjilherg");
                 if (connection.getResponseCode() == 200) {
                     InputStream responseBody = connection.getInputStream();
+                    bitmap[0] = BitmapFactory.decodeStream(responseBody);
                 }
             } catch (MalformedURLException e) {
                 e.printStackTrace();
@@ -906,7 +943,20 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
         thread.start();
-
+        return bitmap[0];
+    }
+    public String saveImageToDownloadFolder(String imageFile, Bitmap bitmap){
+        try {
+            File filePath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), imageFile);
+            OutputStream outputStream = new FileOutputStream(filePath);
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+            outputStream.flush();
+            outputStream.close();
+            return filePath.getPath() + imageFile;
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+        return null;
     }
     public void setBattery() {
         Drawable progressDraw = battery.getProgressDrawable().mutate();
@@ -1111,6 +1161,24 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         }
         return sb.toString();
+    }
+    public void Detector(){
+        if (detected_object != null && detected_id != checkId) {
+            checkId = detected_id;
+            detection.setVisibility(View.VISIBLE);
+            final MediaPlayer mp = MediaPlayer.create(MapsActivity.this, R.raw.beep);
+            for(int i = 0; i < 2; i++) {
+                mp.start();
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            Toast.makeText(com.susiturva.susicam.MapsActivity.this,
+                    "HAVAINTO: " + detected_object,
+                    Toast.LENGTH_LONG).show();
+        }
     }
 }
 
