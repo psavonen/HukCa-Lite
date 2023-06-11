@@ -18,13 +18,17 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.Image;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.storage.StorageManager;
+import android.os.storage.StorageVolume;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.view.Menu;
@@ -107,6 +111,8 @@ import javax.net.ssl.HttpsURLConnection;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener {
 
+
+    private StorageVolume storageVolume;
     private ImageView detectionDialog;
     private GoogleMap mMap;
     private TextView koiraNopeus;
@@ -186,6 +192,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private final String CONTROL_URL_BASE = "https://toor.hopto.org/api/v1/control";
     private final String URL_BASE = "https://toor.hopto.org/api/v1";
     private final String USERNAME_PASSWORD = "susipurkki:susipurkki";
+    public static final String RTSP_SUSIPURKKI = "rtsp://susipurkki:";
     public static String stream1;
     public static String stream2;
 
@@ -281,9 +288,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         toiminnot = findViewById(R.id.toiminnot);
         toiminnot.setText("<");
         detection = findViewById(R.id.detection);
-
-        startService();
-
+        detectionDialog = findViewById(com.ceylonlabs.imageviewpopup.R.id.popup);
+       if(!isMyServiceRunning(LocationService.class)) {
+            startService();
+        }
         try {
             if (diagonalInches >= SCREEN_SIZE_THRESHOLD) {
                 playerView.setVisibility(View.VISIBLE);
@@ -337,11 +345,25 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
         detection.setOnClickListener(view -> {
+            if(!checkPermissionForReadExtertalStorage()) {
+                try {
+                    requestPermissionForReadExtertalStorage();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
             try {
-                Uri uri = Uri.parse(saveImageToDownloadFolder("detection" + detected_id, getImage()));
-                ImagePopup imagePopup = new ImagePopup(this);
-                imagePopup.setImageOnClickClose(true);
-                imagePopup.setImageURI(uri);
+                Uri uri = Uri.parse(getAndSaveImage("detection" + detected_id + ".png"));
+                //Uri uri = Uri.parse(saveImageToDownloadFolder("detection" + detected_id, image));
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setDataAndType(uri, "image/png");
+                try {
+                    startActivity(intent);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                detection.setVisibility(View.INVISIBLE);
             } catch (Exception e){
                 e.printStackTrace();
             }
@@ -522,7 +544,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public void startService() {
         Intent serviceIntent = new Intent(this, LocationService.class);
-        serviceIntent.putExtra("inputExtra", "SusiCam taustapalvelu");
+        serviceIntent.putExtra("inputExtra", "HukCa taustapalvelu");
         ContextCompat.startForegroundService(this, serviceIntent);
     }
 
@@ -567,7 +589,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             try {
                 detected_id = b.getInt("Detected_ID");
             } catch(Exception e){}
-            detected_object = b.getString("Detected_Object");
+            try {
+                detected_object = b.getString("Detected_Object");
+            } catch (Exception e){}
             try {
                 detected_ago = b.getInt("Detected_Ago");
             } catch(Exception e){}
@@ -641,7 +665,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     };
 
     private void exoplayerAudio() {
-        MediaItem firstStream = MediaItem.fromUri("rtsp://susipurkki:" + audio_key + "@" + rtsp_url_audio);
+        MediaItem firstStream = MediaItem.fromUri(RTSP_SUSIPURKKI + audio_key + "@" + rtsp_url_audio);
         DefaultLoadControl loadControl = new DefaultLoadControl.Builder()
                 .setAllocator(new DefaultAllocator(true, 16))
                 .setBufferDurationsMs(500, 500, 500, 500)
@@ -676,18 +700,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void exoplayerTwoStreams() {
-        stream1 = "rtsp://susipurkki:" + stream_1_key + "@" + rtsp_url_stream_1;
-        stream2 = "rtsp://susipurkki:" + stream_2_key + "@" + rtsp_url_stream_2;
+        stream1 = RTSP_SUSIPURKKI + stream_1_key + "@" + rtsp_url_stream_1;
+        stream2 = RTSP_SUSIPURKKI + stream_2_key + "@" + rtsp_url_stream_2;
 
         MediaItem firstStream = MediaItem.fromUri(stream1);
         MediaItem secondStream = MediaItem.fromUri(stream2);
 
         DefaultLoadControl loadControl = new DefaultLoadControl.Builder()
                 .setAllocator(new DefaultAllocator(true, 16))
-                .setBufferDurationsMs(500, 500, 500, 500)
+                .setBufferDurationsMs(2000, 2000, 2000, 2000)
                 .setTargetBufferBytes(200 * 64 * 1024)
                 .setPrioritizeTimeOverSizeThresholds(false)
-                .setBackBuffer(2000, false)
+                .setBackBuffer(3000, false)
                 .createDefaultLoadControl();
 
         final long defaultMaxInitialBitrate = Integer.MAX_VALUE;
@@ -740,8 +764,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Toast.LENGTH_LONG).show();
     }
     private void exoplayer(int stream) {
-        stream1 = "rtsp://susipurkki:" + stream_1_key + "@" + rtsp_url_stream_1;
-        stream2 = "rtsp://susipurkki:" + stream_2_key + "@" + rtsp_url_stream_2;
+        stream1 = RTSP_SUSIPURKKI + stream_1_key + "@" + rtsp_url_stream_1;
+        stream2 = RTSP_SUSIPURKKI + stream_2_key + "@" + rtsp_url_stream_2;
 
         MediaItem firstStream = MediaItem.fromUri(stream1);
         MediaItem secondStream = MediaItem.fromUri(stream2);
@@ -920,21 +944,29 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         thread.start();
         return audioFilename;
     }
-   public Bitmap getImage(){
-        String encoded = Base64.getEncoder().encodeToString((USERNAME_PASSWORD).getBytes(StandardCharsets.UTF_8));
-       final Bitmap[] bitmap = new Bitmap[1];
-       Thread thread = new Thread(() -> {
-            try {
 
+    public String getAndSaveImage(String imageFile) throws InterruptedException {
+        String encoded = Base64.getEncoder().encodeToString((USERNAME_PASSWORD).getBytes(StandardCharsets.UTF_8));
+        Thread thread = new Thread(() -> {
+            Bitmap bitmap = null;
+            try {
                 URL on = new URL(URL_BASE + "/detector/download/" + srnumero + "/" + detected_id);
                 HttpsURLConnection connection = (HttpsURLConnection) on.openConnection();
-                connection.setRequestMethod("GET");
-                connection.setDoOutput(true);
                 connection.setRequestProperty("Authorization", "Basic " + encoded);
                 connection.setRequestProperty("x-apikey", "awidjilherg");
                 if (connection.getResponseCode() == 200) {
-                    InputStream responseBody = connection.getInputStream();
-                    bitmap[0] = BitmapFactory.decodeStream(responseBody);
+                    InputStream responseBody = null;
+                    try {
+                        responseBody = connection.getInputStream();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    bitmap = BitmapFactory.decodeStream(responseBody);
+                    File filePath = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), imageFile);
+                    OutputStream outputStream = new FileOutputStream(filePath);
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+                    outputStream.flush();
+                    outputStream.close();
                 }
             } catch (MalformedURLException e) {
                 e.printStackTrace();
@@ -943,21 +975,20 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
         thread.start();
-        return bitmap[0];
-    }
-    public String saveImageToDownloadFolder(String imageFile, Bitmap bitmap){
-        try {
-            File filePath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), imageFile);
-            OutputStream outputStream = new FileOutputStream(filePath);
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
-            outputStream.flush();
-            outputStream.close();
-            return filePath.getPath() + imageFile;
-        } catch (Exception e){
-            e.printStackTrace();
+        thread.join();
+        //File filePath = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), imageFile);
+        //File filePath = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)  + "/" + imageFile);
+        StorageManager storageManager = (StorageManager) getSystemService(STORAGE_SERVICE);
+        List<StorageVolume> storageVolumes = storageManager.getStorageVolumes();
+        storageVolume = storageVolumes.get(0);
+
+        Uri urlz = null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            urlz = Uri.parse(storageVolume.getDirectory() + "/Download/detection" + detected_id + ".png");
         }
-        return null;
+        return urlz.getPath();
     }
+
     public void setBattery() {
         Drawable progressDraw = battery.getProgressDrawable().mutate();
         battery.setMax(100);
@@ -1040,9 +1071,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onPause() {
         super.onPause();
-        player.release();
-        player2.release();
-        playerAudio.release();
+        try{
+            player.release();
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+        try {
+            player2.release();
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+        try {
+            playerAudio.release();
+        } catch(Exception e){
+            e.printStackTrace();
+        }
         stopService();
     }
     private boolean isMyServiceRunning(Class<?> serviceClass) {
@@ -1166,18 +1209,39 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (detected_object != null && detected_id != checkId) {
             checkId = detected_id;
             detection.setVisibility(View.VISIBLE);
-            final MediaPlayer mp = MediaPlayer.create(MapsActivity.this, R.raw.beep);
-            for(int i = 0; i < 2; i++) {
-                mp.start();
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            try {
+                final MediaPlayer mp = MediaPlayer.create(MapsActivity.this, R.raw.beep);
+                for (int i = 0; i < 2; i++) {
+                    mp.start();
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
+            } catch(Exception e) {
+                e.printStackTrace();
             }
             Toast.makeText(com.susiturva.susicam.MapsActivity.this,
                     "HAVAINTO: " + detected_object,
                     Toast.LENGTH_LONG).show();
+        }
+    }
+    private static final int READ_STORAGE_PERMISSION_REQUEST_CODE = 41;
+    public boolean checkPermissionForReadExtertalStorage() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            int result = this.checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE);
+            return result == PackageManager.PERMISSION_GRANTED;
+        }
+        return false;
+    }
+    public void requestPermissionForReadExtertalStorage() throws Exception {
+        try {
+            ActivityCompat.requestPermissions((Activity) this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE},
+                    READ_STORAGE_PERMISSION_REQUEST_CODE);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
         }
     }
 }

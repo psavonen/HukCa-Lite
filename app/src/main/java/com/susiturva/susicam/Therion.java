@@ -35,14 +35,17 @@ public class Therion extends Activity {
         tallenna = findViewById(R.id.tallenna);
         int PERMISSION_ALL = 1;
         String[] PERMISSIONS = {
+                Manifest.permission.READ_EXTERNAL_STORAGE,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE,
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.RECORD_AUDIO
         };
         if (!hasPermissions(this, PERMISSIONS)) {
             ActivityCompat.requestPermissions(com.susiturva.susicam.Therion.this, PERMISSIONS, PERMISSION_ALL);
-
+            String[] requiredPermissions = { Manifest.permission.READ_EXTERNAL_STORAGE };
+            ActivityCompat.requestPermissions(this, requiredPermissions, 0);
         }
+
         List<MyDBHandler> srnumerot = db.getAllSarjanumerot();
         String srnumero = "";
         for(final MyDBHandler sarjanumero : srnumerot) {
