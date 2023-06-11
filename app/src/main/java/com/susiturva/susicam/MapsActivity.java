@@ -356,10 +356,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             try {
                 Uri uri = Uri.parse(getAndSaveImage("detection" + detected_id + ".png"));
                 //Uri uri = Uri.parse(saveImageToDownloadFolder("detection" + detected_id, image));
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setDataAndType(uri, "image/png");
+                Intent b = new Intent(Intent.ACTION_VIEW);
+                b.setDataAndType(uri, "image/png");
                 try {
-                    startActivity(intent);
+                    startActivity(b);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -947,6 +947,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public String getAndSaveImage(String imageFile) throws InterruptedException {
         String encoded = Base64.getEncoder().encodeToString((USERNAME_PASSWORD).getBytes(StandardCharsets.UTF_8));
+        StorageManager storageManager = (StorageManager) getSystemService(STORAGE_SERVICE);
+        List<StorageVolume> storageVolumes = storageManager.getStorageVolumes();
+        storageVolume = storageVolumes.get(0);
+
+        Uri urlz = null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            urlz = Uri.parse(storageVolume.getDirectory() + "/Download/detection" + detected_id + ".png");
+        }
+        Uri finalUrlz = urlz;
         Thread thread = new Thread(() -> {
             Bitmap bitmap = null;
             try {
@@ -963,7 +972,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                     bitmap = BitmapFactory.decodeStream(responseBody);
                     File filePath = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), imageFile);
-                    OutputStream outputStream = new FileOutputStream(filePath);
+                    OutputStream outputStream = new FileOutputStream(String.valueOf(finalUrlz));
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
                     outputStream.flush();
                     outputStream.close();
@@ -978,14 +987,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         thread.join();
         //File filePath = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), imageFile);
         //File filePath = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)  + "/" + imageFile);
-        StorageManager storageManager = (StorageManager) getSystemService(STORAGE_SERVICE);
-        List<StorageVolume> storageVolumes = storageManager.getStorageVolumes();
-        storageVolume = storageVolumes.get(0);
 
-        Uri urlz = null;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-            urlz = Uri.parse(storageVolume.getDirectory() + "/Download/detection" + detected_id + ".png");
-        }
         return urlz.getPath();
     }
 
