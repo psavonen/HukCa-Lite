@@ -195,7 +195,9 @@
         />
     <ImageView
         android:id="@id/popup"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_width="600dp"
+        android:layout_height="600dp"
+        android:layout_toLeftOf="@id/detection"
         />
 </RelativeLayout>

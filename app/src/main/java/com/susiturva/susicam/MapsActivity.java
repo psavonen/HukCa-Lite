@@ -31,6 +31,7 @@ import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -356,14 +357,20 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             try {
                 Uri uri = Uri.parse(getAndSaveImage("detection" + detected_id + ".png"));
                 //Uri uri = Uri.parse(saveImageToDownloadFolder("detection" + detected_id, image));
-                Intent b = new Intent(Intent.ACTION_VIEW);
+               /* Intent b = new Intent(Intent.ACTION_VIEW);
                 b.setDataAndType(uri, "image/png");
                 try {
                     startActivity(b);
                 } catch (Exception e) {
                     e.printStackTrace();
-                }
-                detection.setVisibility(View.INVISIBLE);
+                }*/
+                detectionDialog.setImageURI(uri);
+                detectionDialog.setTooltipText("HAVAINTO");
+                detectionDialog.setVisibility(View.VISIBLE);
+                detectionDialog.setOnClickListener(v -> {
+                    detectionDialog.setVisibility(View.INVISIBLE);
+                });
+               detection.setVisibility(View.INVISIBLE);
             } catch (Exception e){
                 e.printStackTrace();
             }
@@ -951,15 +958,27 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         List<StorageVolume> storageVolumes = storageManager.getStorageVolumes();
         storageVolume = storageVolumes.get(0);
 
+        String dir = "";
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            dir = storageVolume.getDirectory() + "/Download/HukCa/detection" + detected_id + ".png";
+        }
         Uri urlz = null;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-            urlz = Uri.parse(storageVolume.getDirectory() + "/Download/detection" + detected_id + ".png");
+            urlz = Uri.parse(dir);
+        }
+        File file = null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            file = new File(storageVolume.getDirectory() + "/Download/HukCa");
+        }
+        if (!file.exists()){
+            file.mkdirs();
         }
         Uri finalUrlz = urlz;
         Thread thread = new Thread(() -> {
-            Bitmap bitmap = null;
+            Bitmap bitmap;
             try {
                 URL on = new URL(URL_BASE + "/detector/download/" + srnumero + "/" + detected_id);
+                //URL on = new URL(URL_BASE + "/detector/download/8ef63c6a/496");
                 HttpsURLConnection connection = (HttpsURLConnection) on.openConnection();
                 connection.setRequestProperty("Authorization", "Basic " + encoded);
                 connection.setRequestProperty("x-apikey", "awidjilherg");
@@ -971,7 +990,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         e.printStackTrace();
                     }
                     bitmap = BitmapFactory.decodeStream(responseBody);
-                    File filePath = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), imageFile);
                     OutputStream outputStream = new FileOutputStream(String.valueOf(finalUrlz));
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
                     outputStream.flush();
@@ -985,8 +1003,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
         thread.start();
         thread.join();
-        //File filePath = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), imageFile);
-        //File filePath = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)  + "/" + imageFile);
 
         return urlz.getPath();
     }
