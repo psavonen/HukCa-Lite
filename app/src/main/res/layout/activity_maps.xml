@@ -171,7 +171,17 @@
         android:translationZ="1dp"
         android:visibility="invisible"
         />
-
+    <ImageButton
+        android:id="@+id/recordVideo"
+        android:layout_width="80dp"
+        android:layout_marginTop="5dp"
+        android:layout_below="@id/led"
+        android:layout_height="70dp"
+        android:layout_toStartOf="@+id/sendSound"
+        android:src="@drawable/record_video"
+        android:translationZ="1dp"
+        android:visibility="invisible"
+        />
     <Button
         android:id="@+id/toiminnot"
         android:layout_alignParentRight="true"

@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.JsonReader;
+import android.util.JsonToken;
 
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -77,7 +78,7 @@ public class LocationService extends Service {
     private TimerTask timerTask;
     private Handler handler = new Handler();
 
-    private Thread thread, thread1, thread2;
+    private Thread thread, thread1, thread2, thread3;
 
     public LocationService() {
     }
@@ -96,7 +97,7 @@ public class LocationService extends Service {
         PendingIntent pendingIntent = PendingIntent.getActivity(this,
                 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("SusiCam palvelu")
+                .setContentTitle("HucKa palvelu")
                 .setContentText(input)
                 //.setSmallIcon(R.drawable.alphaw) TODO change this
                 .setContentIntent(pendingIntent)
@@ -151,6 +152,20 @@ public class LocationService extends Service {
         };
         thread2 = new Thread(runnable1);
         thread2.start();
+        Runnable runnable2 = () -> {
+            while(runner) {
+                try {
+                    recordingStatus(serial_hash);
+                }catch(Exception e){}
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        thread3 = new Thread(runnable2);
+        thread3.start();
 
         return START_STICKY;
     }
@@ -274,18 +289,44 @@ public class LocationService extends Service {
                         if(audio_activatedKey.equalsIgnoreCase("audio_activated")){
                             audio_activated = jsonReader.nextInt();
                         }
+
                         String detected_idKey = jsonReader.nextName();
-                        if(detected_idKey.equalsIgnoreCase("detected_id")){
-                            detected_id = jsonReader.nextInt();
+                        try {
+                            if(detected_idKey.equalsIgnoreCase("detected_id")){
+                                if (jsonReader.peek() != JsonToken.NULL) {
+                                    detected_id = jsonReader.nextInt();
+                                }
+                                else {
+                                    jsonReader.skipValue();
+                                }
+                            }
+                        } catch(Exception e){
+                            e.printStackTrace();
+                            System.out.println(e);
                         }
                         String detected_objectKey = jsonReader.nextName();
-                        if(detected_objectKey.equalsIgnoreCase("detected_object")){
-                            detected_object = jsonReader.nextString();
-                        }
+                        try {
+                            if(detected_objectKey.equalsIgnoreCase("detected_object")){
+                                if (jsonReader.peek() != JsonToken.NULL) {
+                                    detected_object = jsonReader.nextString();
+                                }
+                                else {
+                                    jsonReader.skipValue();
+                                }
+                            }
+                        } catch(Exception e){}
+
                         String detected_agoKey = jsonReader.nextName();
-                        if(detected_agoKey.equalsIgnoreCase("detected_ago")){
-                            detected_ago = jsonReader.nextInt();
-                        }
+                        try {
+                            if (detected_agoKey.equalsIgnoreCase("detected_ago")) {
+                                if (jsonReader.peek() != JsonToken.NULL) {
+                                    detected_ago = jsonReader.nextInt();
+                                }
+                                else {
+                                    jsonReader.skipValue();
+                                }
+                            }
+                        } catch(Exception e){}
                         LatLng latLng = new LatLng(lat, lng);
                         Intent i = new Intent("LocationUpdates");
                         Bundle b = new Bundle();
@@ -309,7 +350,9 @@ public class LocationService extends Service {
                         LocalBroadcastManager.getInstance(this).sendBroadcast(i);
                     }
                 }
-                catch(Exception e){}
+                catch(Exception e){
+                    e.printStackTrace();
+                }
             }
 
 
@@ -366,7 +409,6 @@ public class LocationService extends Service {
                 jsonReader.beginObject();
 
                 try {
-
                         String serialHashKey = jsonReader.nextName();
                         String serial_Hash = jsonReader.nextString();
                         String serialKeyKey = jsonReader.nextName();
@@ -418,7 +460,6 @@ public class LocationService extends Service {
                         String hls_url_stream_2Key = jsonReader.nextName();
                         String hls_url_stream_2 = jsonReader.nextString();
 
-
                         String stream_1_keyKey = jsonReader.nextName();
                         String stream_1_key = jsonReader.nextString();
                         String stream_2_keyKey = jsonReader.nextName();
@@ -436,9 +477,6 @@ public class LocationService extends Service {
                         a.putString("audio_key", audio_key);
                         i.putExtra("Streams", a);
                         LocalBroadcastManager.getInstance(this).sendBroadcast(i);
-
-
-
                 }
                 catch(Exception e){e.printStackTrace();}
             }
@@ -451,22 +489,16 @@ public class LocationService extends Service {
         }
     }
     private void route(String serialHash){
-
         URL endpoint = null;
-
         try {
             endpoint = new URL("https://toor.hopto.org/api/v1/route/" + serialHash + "/geojson/" + session_id + "?every_nth_point=20");
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
-
-
-        URL finalEndpoint = endpoint;
-
         HttpsURLConnection connection =
                 null;
         try {
-            connection = (HttpsURLConnection) finalEndpoint.openConnection();
+            connection = (HttpsURLConnection) endpoint.openConnection();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -479,7 +511,7 @@ public class LocationService extends Service {
                 if (connection.getResponseCode() == 200) {
 
                Scanner scan = new Scanner(connection.getInputStream());
-                String str = new String();
+                String str = "";
                 while(scan.hasNext())
                     str += scan.nextLine();
                 scan.close();
@@ -505,6 +537,55 @@ public class LocationService extends Service {
                         b.putParcelableArrayList("Route", latLngList );
                         i.putExtra("Route", b);
                         LocalBroadcastManager.getInstance(this).sendBroadcast(i);
+
+                } else {
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+    }
+    private void recordingStatus(String serialHash){
+        URL endpoint = null;
+        try {
+            endpoint = new URL("https://toor.hopto.org/api/v1/record/status/" + serialHash);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        HttpsURLConnection connection =
+                null;
+        try {
+            connection = (HttpsURLConnection) endpoint.openConnection();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        String encoded = Base64.getEncoder().encodeToString(SUSIPURKKI_SUSIPURKKI.getBytes(StandardCharsets.UTF_8));
+        connection.setRequestProperty("Authorization", "Basic " + encoded);
+        connection.setRequestProperty("x-apikey", X_API_KEY);
+
+        try {
+            if(session_id != null) {
+                if (connection.getResponseCode() == 200) {
+
+                    Scanner scan = new Scanner(connection.getInputStream());
+                    String str = "";
+                    while(scan.hasNext())
+                        str += scan.nextLine();
+                    scan.close();
+
+                    JSONObject obj = new JSONObject(str);
+
+                    JSONObject obj2 = obj.getJSONObject("front");
+                    int id = obj2.getInt("id");
+
+                    Intent i = new Intent("RecordingStatus");
+                    Bundle b = new Bundle();
+                    b.putInt("RecordingStatus", id);
+                    i.putExtra("RecordingStatus", b);
+                    LocalBroadcastManager.getInstance(this).sendBroadcast(i);
 
                 } else {
                 }

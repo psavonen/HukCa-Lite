@@ -137,6 +137,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private final long MIN_TIME = 1000; // 1 second
     private final long MIN_DIST = 0; // 5 Meters
     private int bat_soc;
+    private int recordingStatus;
     private int active_streams;
     private int camera_mode;
     private int checkId;
@@ -173,7 +174,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private boolean nightVision = false;
     private boolean irLeds = false;
     private boolean broadcast = false;
-
+    private boolean huckaOn = false;
+    private boolean recordVideoOn = false;
     private Button btnSwitch;
     private Button toiminnot;
     private Button koira;
@@ -185,6 +187,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ImageButton lahetys;
     private ImageButton sendSound;
     private ImageButton detection;
+    private ImageButton recordVideo;
 
     private ExoPlayer player;
     private ExoPlayer player2;
@@ -289,6 +292,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         toiminnot = findViewById(R.id.toiminnot);
         toiminnot.setText("<");
         detection = findViewById(R.id.detection);
+        recordVideo = findViewById(R.id.recordVideo);
         detectionDialog = findViewById(com.ceylonlabs.imageviewpopup.R.id.popup);
        if(!isMyServiceRunning(LocationService.class)) {
             startService();
@@ -330,6 +334,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
                 piilossa = false;
                 sendSound.setVisibility(View.VISIBLE);
+                recordVideo.setVisibility(View.VISIBLE);
                 toiminnot.setText(">");
             } else {
                 valot.setVisibility(View.INVISIBLE);
@@ -341,8 +346,24 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
                 lahetys.setVisibility(View.INVISIBLE);
                 sendSound.setVisibility(View.INVISIBLE);
+                recordVideo.setVisibility(View.INVISIBLE);
                 piilossa = true;
                 toiminnot.setText("<");
+            }
+        });
+
+        recordVideo.setOnClickListener(v -> {
+            if(!recordVideoOn){
+                String urli = URL_BASE + "/record/" + srnumero + "/true?source=front&storage=camera";
+                setControl(urli);
+                recordVideo.setImageResource(R.drawable.record_video_stop);
+                recordVideoOn = true;
+            }
+            else {
+                String urli = URL_BASE + "/record/" + srnumero + "/false?source=front&storage=camera";
+                setControl(urli);
+                recordVideo.setImageResource(R.drawable.record_video);
+                recordVideoOn = false;
             }
         });
         detection.setOnClickListener(view -> {
@@ -356,14 +377,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             try {
                 Uri uri = Uri.parse(getAndSaveImage("detection" + detected_id + ".png"));
-                //Uri uri = Uri.parse(saveImageToDownloadFolder("detection" + detected_id, image));
-               /* Intent b = new Intent(Intent.ACTION_VIEW);
-                b.setDataAndType(uri, "image/png");
-                try {
-                    startActivity(b);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }*/
                 detectionDialog.setImageURI(uri);
                 detectionDialog.setTooltipText("HAVAINTO");
                 detectionDialog.setVisibility(View.VISIBLE);
@@ -517,6 +530,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter("LocationUpdates"));
         LocalBroadcastManager.getInstance(this).registerReceiver(aMessageReceiver, new IntentFilter("Streams"));
         LocalBroadcastManager.getInstance(this).registerReceiver(bMessageReceiver, new IntentFilter("Route"));
+        LocalBroadcastManager.getInstance(this).registerReceiver(cMessageReceiver, new IntentFilter("RecordingStatus"));
         firstTime = true;
         try {
             new Handler().postDelayed(() ->
@@ -654,9 +668,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private BroadcastReceiver bMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-
             Bundle a = intent.getBundleExtra("Route");
-
             try {
                 route = a.getParcelableArrayList("Route");
                 PolylineOptions polylineOptions = new PolylineOptions();
@@ -667,6 +679,23 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 gpsTrack.setZIndex(1000);
                } catch (Exception e) {
                 e.printStackTrace();
+            }
+        }
+    };
+    private BroadcastReceiver cMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Bundle a = intent.getBundleExtra("RecordingStatus");
+            try {
+                    recordingStatus = a.getInt("RecordingStatus");
+                if(recordingStatus == -1){
+                    recordVideo.setImageResource(R.drawable.record_video);
+                }
+                else {
+                    recordVideo.setImageResource(R.drawable.record_video_stop);
+                }
+                } catch (Exception e) {
+                    e.printStackTrace();
             }
         }
     };
@@ -850,6 +879,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         thread.start();
 
     }
+
     private String sendAudio(String filepath, Map<String, String> params) {
         final InputStream[] inputStream = {null};
         String encoded = Base64.getEncoder().encodeToString((USERNAME_PASSWORD).getBytes(StandardCharsets.UTF_8));
@@ -1158,12 +1188,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             //MapsActivity.onOff.setText("OFF | ");
             float erotus = sinceMidnight - millis;
            onOff.setText("ON  | ");
+           huckaOn = true;
             stopTimer();
             startTimer();
             if (erotus > 5000) {
                 onOff.setText("OFF | ");
+                huckaOn = false;
             } else {
                 onOff.setText("ON  | ");
+                huckaOn = true;
                 //MapsActivity.firstTime = true;
             }
         }catch(Exception e){
@@ -1224,7 +1257,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         return sb.toString();
     }
     public void Detector(){
-        if (detected_object != null && detected_id != checkId) {
+        if (detected_object != null && detected_id != checkId && huckaOn) {
             checkId = detected_id;
             detection.setVisibility(View.VISIBLE);
             try {

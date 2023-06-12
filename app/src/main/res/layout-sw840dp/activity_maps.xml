@@ -169,9 +169,6 @@
         android:src="@drawable/brightness_7_black_24dp"
         android:visibility="invisible"
         />
-
-
-
     <Button
         android:id="@+id/keskitaKoiraan"
         android:layout_below="@id/battery"
@@ -188,8 +185,19 @@
         android:layout_marginTop="5dp"
         android:layout_below="@id/led"
         android:layout_height="wrap_content"
-        android:layout_toStartOf="@+id/toiminnot"
+        android:layout_toStartOf="@+id/recordVideo"
         android:src="@drawable/record_voice_over_black_24dp"
+        android:translationZ="1dp"
+        android:visibility="invisible"
+        />
+    <ImageButton
+        android:id="@+id/recordVideo"
+        android:layout_width="80dp"
+        android:layout_marginTop="5dp"
+        android:layout_below="@id/led"
+        android:layout_height="70dp"
+        android:layout_toStartOf="@+id/toiminnot"
+        android:src="@drawable/record_video"
         android:translationZ="1dp"
         android:visibility="invisible"
         />
