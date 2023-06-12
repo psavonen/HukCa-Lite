@@ -2,9 +2,11 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000">
+    android:background="#375149">
 
     <TextView
+        android:fontFamily="sans-serif-black"
+        android:textColor="#af6946"
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:text="@string/app_name"
@@ -19,23 +21,26 @@
         android:layout_width="300dp"
         android:layout_height="485dp"
         android:layout_gravity="center_horizontal"
-        android:src="@drawable/susiturva5" />
+        android:src="@drawable/hukca" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="30dp"
+        android:textColor="#af6946"
         android:text="Powered by:"
         android:textAlignment="center"
         android:textSize="24dp" />
     <TextView
         android:layout_width="match_parent"
         android:layout_height="30dp"
+        android:textColor="#af6946"
         android:text="Google"
         android:textAlignment="center"
         android:textSize="18dp" />
     <TextView
         android:layout_width="match_parent"
         android:layout_height="30dp"
+        android:textColor="#af6946"
         android:text="Maanmittauslaitos"
         android:textAlignment="center"
         android:textSize="18dp" />
