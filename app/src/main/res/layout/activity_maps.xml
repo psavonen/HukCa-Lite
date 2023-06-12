@@ -182,6 +182,17 @@
         android:translationZ="1dp"
         android:visibility="invisible"
         />
+    <ImageButton
+        android:id="@+id/usbMode"
+        android:layout_width="80dp"
+        android:layout_marginTop="5dp"
+        android:layout_below="@id/led"
+        android:layout_height="70dp"
+        android:layout_toStartOf="@+id/recordVideo"
+        android:src="@drawable/usb_mode"
+        android:translationZ="1dp"
+        android:visibility="invisible"
+        />
     <Button
         android:id="@+id/toiminnot"
         android:layout_alignParentRight="true"
