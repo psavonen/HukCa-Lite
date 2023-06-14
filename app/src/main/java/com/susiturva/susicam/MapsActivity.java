@@ -233,6 +233,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Intent intent = new Intent(com.susiturva.susicam.MapsActivity.this, Therion.class);
                 startActivity(intent);
                 return true;
+            case R.id.massamuisti:
+               massamuisti();
+                return true;
 
             default:
                 return super.onOptionsItemSelected(item);
@@ -337,7 +340,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 piilossa = false;
                 sendSound.setVisibility(View.VISIBLE);
                 recordVideo.setVisibility(View.VISIBLE);
-                usbMode.setVisibility(View.VISIBLE);
+                usbMode.setVisibility(View.INVISIBLE);
                 toiminnot.setText(">");
             } else {
                 valot.setVisibility(View.INVISIBLE);
@@ -1322,6 +1325,29 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             e.printStackTrace();
             throw e;
         }
+    }
+
+    public void massamuisti(){
+        String urli = "https://toor.hopto.org/api/v1/control/"+ srnumero + "/activate_usb/true";
+        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+        builder.setCancelable(true);
+        builder.setTitle("Varmistus");
+        builder.setMessage("Haluatko varmasti asettaa laitteen massamuisti-tilaan? Kun haluat palata takaisin massamuisti-tilasta, sammuta ja käynnistä laite uudelleen.");
+        builder.setPositiveButton("Hyväksy",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        setControl(urli);
+                    }
+                });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 }
 
