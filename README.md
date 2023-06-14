@@ -1,4 +1,4 @@
-# SusiCam
+# HukCa
 
 ## Testing url:
 ```
