@@ -772,10 +772,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         DefaultLoadControl loadControl = new DefaultLoadControl.Builder()
                 .setAllocator(new DefaultAllocator(true, 16))
-                .setBufferDurationsMs(2000, 2000, 2000, 2000)
+                .setBufferDurationsMs(500, 500, 500, 500)
                 .setTargetBufferBytes(200 * 64 * 1024)
                 .setPrioritizeTimeOverSizeThresholds(false)
-                .setBackBuffer(3000, false)
+                .setBackBuffer(1000, false)
                 .createDefaultLoadControl();
 
         final long defaultMaxInitialBitrate = Integer.MAX_VALUE;
