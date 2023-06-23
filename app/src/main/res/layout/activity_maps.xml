@@ -26,8 +26,16 @@
         android:layout_alignParentBottom="true"
         android:background="@android:color/transparent" />
     <com.google.android.exoplayer2.ui.StyledPlayerView
+        android:id="@+id/fullscreen"
+        android:layout_height="match_parent"
+        android:layout_gravity="center_vertical"
+        android:background="@color/black"
+        android:layout_width="match_parent"
+        android:visibility="invisible"
+        />
+    <com.google.android.exoplayer2.ui.StyledPlayerView
         android:id="@+id/player"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_gravity="center_vertical"
         android:layout_width="450dp"/>
     <com.google.android.exoplayer2.ui.StyledPlayerView
@@ -42,6 +50,16 @@
         android:layout_gravity="center_vertical"
         android:layout_width="1dp"
         android:visibility="invisible"/>
+
+    <ImageButton
+        android:id="@+id/fullscreenBack"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentBottom="true"
+        android:background="@android:color/transparent"
+        android:visibility="invisible"/>
+    />
     <TextView
         android:id="@+id/onOff"
         android:textColor="#FFFFFF"
@@ -198,11 +216,13 @@
         android:layout_alignParentRight="true"
         android:layout_below="@id/battery"
         android:layout_marginTop="5dp"
-        android:layout_width="30dp"
+        android:layout_width="50dp"
         android:layout_height="68dp"
         android:text=""
         android:visibility="visible"
         />
+
+
     <ImageButton
         android:id="@+id/detection"
         android:layout_alignParentRight="true"
@@ -217,8 +237,10 @@
     <ImageView
         android:id="@id/popup"
         android:layout_alignParentRight="true"
-        android:layout_width="600dp"
-        android:layout_height="600dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_toLeftOf="@id/detection"
+        android:background="@color/black"
+        android:visibility="invisible"
         />
 </RelativeLayout>

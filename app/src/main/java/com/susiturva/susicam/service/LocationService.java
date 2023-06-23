@@ -16,9 +16,11 @@ import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.android.gms.maps.model.LatLng;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.commons.codec.binary.StringUtils;
 import com.susiturva.susicam.DatabaseHelper;
 import com.susiturva.susicam.MapsActivity;
 import com.susiturva.susicam.MyDBHandler;
+import com.susiturva.susicam.R;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -78,7 +80,7 @@ public class LocationService extends Service {
     private TimerTask timerTask;
     private Handler handler = new Handler();
 
-    private Thread thread, thread1, thread2, thread3;
+    private Thread locationThread, streamersThread1, thread2, thread3;
 
     public LocationService() {
     }
@@ -91,7 +93,14 @@ public class LocationService extends Service {
             srnumero = String.valueOf(sarjanumero.getSarjanumero());
         }
         String serial_hash = srnumero;
-        String input = intent.getStringExtra("inputExtra");
+        String input = "Off";
+        try {
+            if (!StringUtils.equals(null, intent.getStringExtra("inputExtra"))) {
+                input = intent.getStringExtra("inputExtra");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         createNotificationChannel();
         Intent notificationIntent = new Intent(this, MapsActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this,
@@ -99,13 +108,12 @@ public class LocationService extends Service {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("HucKa palvelu")
                 .setContentText(input)
-                //.setSmallIcon(R.drawable.alphaw) TODO change this
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentIntent(pendingIntent)
                 .build();
         startForeground(1, notification);
 
         Runnable runnable = () -> {
-
             while(runner) {
                 try {
                     location(serial_hash);
@@ -120,31 +128,35 @@ public class LocationService extends Service {
             }
         };
 
-        thread = new Thread(runnable);
-        thread.start();
+        locationThread = new Thread(runnable);
+        locationThread.start();
 
-        thread1 = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try{
+        Runnable streamersRunnable = () -> {
+            while(runner) {
+                try {
                     streamers(serial_hash);
-                }catch(Exception e){
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
-        });
-        thread1.start();
+        };
+        streamersThread1 = new Thread(streamersRunnable);
+        streamersThread1.start();
+
         Runnable runnable1 = () -> {
 
             while(runner) {
                 try {
                     route(serial_hash);
 
-                }catch(Exception e){}
-
+                } catch(Exception e){}
                 try {
                     Thread.sleep(2000);
-
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -356,8 +368,11 @@ public class LocationService extends Service {
             }
 
 
+
             else{
+                connection.disconnect();
             }
+            connection.disconnect();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -483,7 +498,9 @@ public class LocationService extends Service {
 
 
             else{
+                myConnection.disconnect();
             }
+            myConnection.disconnect();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -539,7 +556,9 @@ public class LocationService extends Service {
                         LocalBroadcastManager.getInstance(this).sendBroadcast(i);
 
                 } else {
+                    connection.disconnect();
                 }
+                connection.disconnect();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -588,7 +607,9 @@ public class LocationService extends Service {
                     LocalBroadcastManager.getInstance(this).sendBroadcast(i);
 
                 } else {
+                    connection.disconnect();
                 }
+                connection.disconnect();
             }
         } catch (IOException e) {
             e.printStackTrace();

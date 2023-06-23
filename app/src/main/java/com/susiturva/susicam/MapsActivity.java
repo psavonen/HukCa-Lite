@@ -40,7 +40,9 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -61,6 +63,7 @@ import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
+import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.android.exoplayer2.ui.StyledPlayerView;
 import com.google.android.exoplayer2.upstream.DefaultAllocator;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
@@ -123,6 +126,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private StyledPlayerView playerView;
     private StyledPlayerView playerView2;
     private StyledPlayerView playerViewAudio;
+    private StyledPlayerView fullscreenFrame;
     private LatLng latLong = new LatLng(0, 0);
     private List<LatLng>points = new ArrayList<>();
     private ArrayList<LatLng>route = new ArrayList<>();
@@ -136,6 +140,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Long uptime;
     private final long MIN_TIME = 1000; // 1 second
     private final long MIN_DIST = 0; // 5 Meters
+    private int height;
+    private int width;
     private int bat_soc;
     private int recordingStatus;
     private int active_streams;
@@ -176,7 +182,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private boolean broadcast = false;
     private boolean huckaOn = false;
     private boolean recordVideoOn = false;
+    private boolean videoMemory = true;
+    private boolean videoCheck = true;
+    private boolean fullscreenSwitch = false;
+    private boolean fullscreenBackSwitch = false;
+    private boolean tunnistuskytkenta = false;
     private Button btnSwitch;
+    private ImageButton fullscreenBack;
     private Button toiminnot;
     private Button koira;
 
@@ -229,6 +241,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(i);
                 return true;
+            case R.id.tunnistus:
+                if (!tunnistuskytkenta) {
+                    tunnistusPaalle();
+                    tunnistuskytkenta = true;
+                }
+                else{
+                    tunnistusPois();
+                    tunnistuskytkenta = false;
+                }
+                return true;
             case R.id.sarjanumero:
                 Intent intent = new Intent(com.susiturva.susicam.MapsActivity.this, Therion.class);
                 startActivity(intent);
@@ -236,6 +258,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             case R.id.massamuisti:
                massamuisti();
                 return true;
+
 
             default:
                 return super.onOptionsItemSelected(item);
@@ -252,11 +275,22 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+       getWindow().setFlags(
+               WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+               WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+       );
+       View decorView = getWindow().getDecorView();
+        // Hide the status bar.
+       int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN |
+               View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+       decorView.setSystemUiVisibility(uiOptions);
         setContentView(R.layout.activity_maps);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         try {
             DisplayMetrics displayMetrics = new DisplayMetrics();
             getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+            height = displayMetrics.heightPixels;
+            width = displayMetrics.widthPixels;
             float yInches = displayMetrics.heightPixels / displayMetrics.ydpi;
             float xInches = displayMetrics.widthPixels / displayMetrics.xdpi;
             diagonalInches = Math.sqrt(xInches * xInches + yInches * yInches);
@@ -272,14 +306,19 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         playerView = findViewById(R.id.player);
         playerView.hideController();
+        playerView.setShowBuffering(StyledPlayerView.SHOW_BUFFERING_ALWAYS);
         playerView.setPlayer(player);
         playerView2 = findViewById(R.id.player2);
         playerView2.setPlayer(player2);
         playerView2.hideController();
+        playerView2.setShowBuffering(StyledPlayerView.SHOW_BUFFERING_ALWAYS);
         playerView.setUseController(false);
         playerView2.setUseController(false);
+        playerView.setKeepContentOnPlayerReset(true);
         playerViewAudio = findViewById(R.id.playerAudio);
+        fullscreenFrame = findViewById(R.id.fullscreen);
 
+        fullscreenBack = findViewById(R.id.fullscreenBack);
         btnSwitch = findViewById(R.id.connect);
         koira = findViewById(R.id.keskitaKoiraan);
         lahetys = (ImageButton) findViewById(R.id.lahetys);
@@ -299,6 +338,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         recordVideo = findViewById(R.id.recordVideo);
         usbMode = findViewById(R.id.usbMode);
         detectionDialog = findViewById(com.ceylonlabs.imageviewpopup.R.id.popup);
+        RelativeLayout.LayoutParams layoutParamsNormal = new RelativeLayout.LayoutParams(width / 2,height / 2);
+        RelativeLayout.LayoutParams layoutParamsFullscreen = new RelativeLayout.LayoutParams(width, height);
+
        if(!isMyServiceRunning(LocationService.class)) {
             startService();
         }
@@ -315,12 +357,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             if(diagonalInches <= SCREEN_SIZE_THRESHOLD) {
                 if (!switcher) {
                     playerView.setVisibility(View.INVISIBLE);
+                    playerView.setPlayer(player);
                     playerView2.setVisibility(View.VISIBLE);
                     //exoplayer(2);
                     switcher = true;
                 } else {
                     playerView.setVisibility(View.VISIBLE);
                     playerView2.setVisibility(View.INVISIBLE);
+                    playerView2.setPlayer(player2);
                     //exoplayer(1);
                     switcher = false;
                 }
@@ -382,18 +426,23 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             }
 
-            try {
-                Uri uri = Uri.parse(getAndSaveImage("detection" + detected_id + ".png"));
-                detectionDialog.setImageURI(uri);
-                detectionDialog.setTooltipText("HAVAINTO");
-                detectionDialog.setVisibility(View.VISIBLE);
-                detectionDialog.setOnClickListener(v -> {
-                    detectionDialog.setVisibility(View.INVISIBLE);
-                });
-               detection.setVisibility(View.INVISIBLE);
-            } catch (Exception e){
-                e.printStackTrace();
-            }
+                //Thread thread = new Thread(() -> {
+                    Uri uri = null;
+                    try {
+                        uri = getAndSaveImage();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    detectionDialog.setImageURI(uri);
+                    detectionDialog.setTooltipText("HAVAINTO");
+                    detectionDialog.setVisibility(View.VISIBLE);
+                    detectionDialog.setOnClickListener(v -> {
+                        detectionDialog.setVisibility(View.INVISIBLE);
+                    });
+                    detection.setVisibility(View.INVISIBLE);
+                //});
+               // thread.start();
+
         });
         koira.setOnClickListener(v -> firstTime = true);
 
@@ -532,29 +581,55 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
 
         fullscreen.setOnClickListener(v -> {
-            Intent i = new Intent(MapsActivity.this, VideoActivity.class);
-            startActivity(i);
+           /* Intent i = new Intent(MapsActivity.this, VideoActivity.class);
+            startActivity(i);*/
+            if (!fullscreenBackSwitch) {
+//                playerView.setLayoutParams(layoutParamsFullscreen);
+//                playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
+//                playerView2.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
+                /*fullscreenFrame.setVisibility(View.VISIBLE);
+                fullscreenBack.setVisibility(View.VISIBLE);
+                fullscreenFrame.hideController();
+                fullscreenFrame.setUseController(false);
+                fullscreenFrame.setShowBuffering(StyledPlayerView.SHOW_BUFFERING_ALWAYS);
+                fullscreenFrame.setPlayer(player);*/
+                fullscreenBackSwitch = true;
+            }
+            else {
+//                playerView.setLayoutParams(layoutParamsNormal);
+//                playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM);
+//                playerView2.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM);
+                /*fullscreenFrame.setVisibility(View.INVISIBLE);
+                fullscreenBack.setVisibility(View.INVISIBLE);*/
+                fullscreenBackSwitch = false;
+                }
+        });
+
+        fullscreenBack.setOnClickListener(v -> {
+            if (!fullscreenSwitch) {
+                fullscreenFrame.setPlayer(player2);
+                playerView.setPlayer(player);
+                fullscreenSwitch = true;
+            }
+            else {
+                fullscreenFrame.setPlayer(player);
+                playerView2.setPlayer(player2);
+                fullscreenSwitch = false;
+            }
         });
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
-
     }
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * <p>
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     protected void onResume() {
         super.onResume();
+        View decorView = getWindow().getDecorView();
+        // Hide the status bar.
+        int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN |
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+        decorView.setSystemUiVisibility(uiOptions);
         if(!isMyServiceRunning(LocationService.class)) {
             startService();
         }
@@ -654,7 +729,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     e.printStackTrace();
                 }
                 setBattery();
-                powerService();
+
+               if (powerService()) {
+                   if (videoCheck) {
+                        videoCheck = false;
+                        if(!exoplayerPlaying(player)) {
+                            exoplayerTwoStreams();
+                        }
+                    }
+                }
+               else {
+                   videoCheck = true;
+               }
                 koiraNopeus.setText(speed.toString());
                 if (checkGPSandNetwork()) {
                     try{
@@ -1013,15 +1099,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         return audioFilename;
     }
 
-    public String getAndSaveImage(String imageFile) throws InterruptedException {
+    public Uri getAndSaveImage() throws InterruptedException {
         String encoded = Base64.getEncoder().encodeToString((USERNAME_PASSWORD).getBytes(StandardCharsets.UTF_8));
         StorageManager storageManager = (StorageManager) getSystemService(STORAGE_SERVICE);
         List<StorageVolume> storageVolumes = storageManager.getStorageVolumes();
         storageVolume = storageVolumes.get(0);
 
         String dir = "";
+        String filename = new SimpleDateFormat("yyyyddMMHHmm").format(new Date()) + ".png";
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-            dir = storageVolume.getDirectory() + "/Download/HukCa/detection" + detected_id + ".png";
+            dir = storageVolume.getDirectory() + "/Pictures/HukCa/detection" + filename;
         }
         Uri urlz = null;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
@@ -1029,12 +1116,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         File file = null;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-            file = new File(storageVolume.getDirectory() + "/Download/HukCa");
+            file = new File(storageVolume.getDirectory() + "/Pictures/HukCa");
         }
         if (!file.exists()){
             file.mkdirs();
         }
-        Uri finalUrlz = urlz;
+       Uri finalUrlz = urlz;
         Thread thread = new Thread(() -> {
             Bitmap bitmap;
             try {
@@ -1064,8 +1151,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
         thread.start();
         thread.join();
-
-        return urlz.getPath();
+        if (Build.VERSION.SDK_INT < 19) {
+            sendBroadcast(new Intent(Intent.ACTION_MEDIA_MOUNTED,
+                    Uri.parse(file.getPath() + filename)));
+        }
+        else {
+            sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
+                    Uri.parse(file.getPath() + filename)));
+        }
+        return urlz;
     }
 
     public void setBattery() {
@@ -1150,7 +1244,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onPause() {
         super.onPause();
-        try{
+        /*try{
             player.release();
         } catch(Exception e){
             e.printStackTrace();
@@ -1164,7 +1258,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             playerAudio.release();
         } catch(Exception e){
             e.printStackTrace();
-        }
+        }*/
         stopService();
     }
     private boolean isMyServiceRunning(Class<?> serviceClass) {
@@ -1209,9 +1303,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         return gps_enabled;
     }
-    public void powerService() throws ParseException {
-        Calendar rightNow = Calendar.getInstance();
-        float sinceMidnight = rightNow.getTimeInMillis();
+    public boolean powerService() throws ParseException {
+        Date dateNow = new Date();
+        float sinceMidnight = dateNow.getTime();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date date = sdf.parse(last_update);
         float millis = date.getTime();
@@ -1233,6 +1327,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }catch(Exception e){
             e.printStackTrace();
         }
+        return huckaOn;
     }
     private void stopTimer(){
         if(timer != null){
@@ -1246,10 +1341,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void run() {
                 handler.post(new Runnable() {
                     public void run(){
-                        //your code is here
-
-
-                        //stopTimer();
                         MapsActivity.onOff.setText("OFF | ");
 
                     }
@@ -1288,9 +1379,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         return sb.toString();
     }
     public void Detector(){
-        if (detected_object != null && detected_id != checkId && huckaOn) {
+        if (detected_object != null && detected_id != checkId && huckaOn && detected_ago < 30) {
             checkId = detected_id;
             detection.setVisibility(View.VISIBLE);
+            Thread thread = new Thread(() -> {
             try {
                 final MediaPlayer mp = MediaPlayer.create(MapsActivity.this, R.raw.beep);
                 for (int i = 0; i < 2; i++) {
@@ -1302,6 +1394,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                 }
             } catch(Exception e) {
+                e.printStackTrace();
+            }
+            });
+            thread.start();
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
             Toast.makeText(com.susiturva.susicam.MapsActivity.this,
@@ -1348,6 +1447,27 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         AlertDialog dialog = builder.create();
         dialog.show();
+    }
+    private boolean exoplayerPlaying(ExoPlayer exoPlayer) {
+        if (exoPlayer.getPlaybackState() == Player.STATE_READY) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    private void tunnistusPaalle(){
+        String urli = "https://toor.hopto.org/api/v1/detector/control/"+ srnumero + "/front/true?interval=5&sound_volume=1";
+        Toast.makeText(MapsActivity.this,
+                "Hahmontunnistus päällä" ,
+                Toast.LENGTH_SHORT).show();
+        setControl(urli);
+    }
+    private void tunnistusPois(){
+        String urli = "https://toor.hopto.org/api/v1/detector/control/"+ srnumero + "/front/false?interval=5&sound_volume=1";
+        Toast.makeText(MapsActivity.this,
+                "Hahmontunnitus pois päältä" ,
+                Toast.LENGTH_SHORT).show();
+        setControl(urli);
     }
 }
 
