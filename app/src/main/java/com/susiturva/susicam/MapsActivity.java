@@ -21,6 +21,7 @@ import android.location.LocationManager;
 import android.media.Image;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -114,7 +115,6 @@ import java.util.TimerTask;
 import javax.net.ssl.HttpsURLConnection;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener {
-
 
     private StorageVolume storageVolume;
     private ImageView detectionDialog;
@@ -269,6 +269,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public boolean onPrepareOptionsMenu(Menu menu) {
         MenuItem myItem = menu.findItem(R.id.SN);
         myItem.setTitle("S/N: " + srnumero);
+        MenuItem tunnistusTitle = menu.findItem(R.id.tunnistus);
+        if (!tunnistuskytkenta) {
+            tunnistusTitle.setTitle("Hahmontunnistus päälle");
+        }
+        else {
+            tunnistusTitle.setTitle("Hahmontunnistus pois");
+        }
         return true;
     }
    @SuppressLint("MissingInflatedId")
@@ -1106,9 +1113,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         storageVolume = storageVolumes.get(0);
 
         String dir = "";
-        String filename = new SimpleDateFormat("yyyyddMMHHmm").format(new Date()) + ".png";
+        String filename = "detection" + new SimpleDateFormat("yyyyddMMHHmm").format(new Date()) + ".png";
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-            dir = storageVolume.getDirectory() + "/Pictures/HukCa/detection" + filename;
+            dir = storageVolume.getDirectory() + "/Pictures/HukCa/" + filename;
         }
         Uri urlz = null;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
@@ -1143,22 +1150,29 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     outputStream.flush();
                     outputStream.close();
                 }
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
         });
         thread.start();
         thread.join();
-        if (Build.VERSION.SDK_INT < 19) {
-            sendBroadcast(new Intent(Intent.ACTION_MEDIA_MOUNTED,
-                    Uri.parse(file.getPath() + filename)));
+        try {
+            MediaScannerConnection.scanFile(this,
+                    new String[]{urlz.toString()},
+                    null, null);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        else {
-            sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
-                    Uri.parse(file.getPath() + filename)));
-        }
+//        if (Build.VERSION.SDK_INT < 19) {
+//            sendBroadcast(new Intent(Intent.ACTION_MEDIA_MOUNTED,
+//                    Uri.parse(file.getPath() + "/" + filename)));
+//        }
+//        else {
+//            sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
+//                    Uri.parse(file.getPath() + "/" + filename)));
+//        }
+
         return urlz;
     }
 
@@ -1351,7 +1365,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void MediaRecorderReady(){
-        mediaRecorder=new MediaRecorder();
+        mediaRecorder = new MediaRecorder();
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
         mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
@@ -1398,14 +1412,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
             });
             thread.start();
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
             Toast.makeText(com.susiturva.susicam.MapsActivity.this,
                     "HAVAINTO: " + detected_object,
-                    Toast.LENGTH_LONG).show();
+                    Toast.LENGTH_SHORT).show();
         }
     }
     private static final int READ_STORAGE_PERMISSION_REQUEST_CODE = 41;

@@ -4,10 +4,10 @@
         android:title="Käynnistä ohjelma uudelleen"/>
     <item android:id="@+id/tunnistus"
         android:title="Hahmontunnistuksen kytkentä"/>
-    <item android:id="@+id/sarjanumero"
-        android:title="Aseta sarjanumero"/>
     <item android:id="@+id/massamuisti"
         android:title="Aseta laite massamuistitilaan"/>
+    <item android:id="@+id/sarjanumero"
+        android:title="Aseta sarjanumero"/>
     <item android:id="@+id/SN"
         android:title="-"/>
 </menu>
