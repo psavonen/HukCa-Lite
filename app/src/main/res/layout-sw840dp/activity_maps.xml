@@ -234,7 +234,7 @@
         android:layout_alignParentRight="true"
         android:layout_below="@id/battery"
         android:layout_marginTop="5dp"
-        android:layout_width="30dp"
+        android:layout_width="50dp"
         android:layout_height="68dp"
         android:text=""
         android:visibility="visible"
@@ -253,8 +253,10 @@
     <ImageView
         android:id="@id/popup"
         android:layout_alignParentRight="true"
-        android:layout_width="600dp"
-        android:layout_height="600dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/black"
         android:layout_toLeftOf="@id/detection"
+        android:visibility="invisible"
         />
 </RelativeLayout>
