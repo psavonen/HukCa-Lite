@@ -18,21 +18,18 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.media.Image;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -41,7 +38,6 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -52,19 +48,15 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.fragment.app.FragmentActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import com.ceylonlabs.imageviewpopup.ImagePopup;
 import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.android.exoplayer2.ui.StyledPlayerView;
 import com.google.android.exoplayer2.upstream.DefaultAllocator;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
@@ -80,11 +72,7 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.android.gms.maps.model.TileProvider;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.methods.HttpPost;
 import com.susiturva.susicam.service.LocationService;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -102,7 +90,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -126,6 +113,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private StyledPlayerView playerView;
     private StyledPlayerView playerView2;
     private StyledPlayerView playerViewAudio;
+    private StyledPlayerView fullscreenFrame1;
     private StyledPlayerView fullscreenFrame;
     private LatLng latLong = new LatLng(0, 0);
     private List<LatLng>points = new ArrayList<>();
@@ -205,6 +193,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ExoPlayer player;
     private ExoPlayer player2;
     private ExoPlayer playerAudio;
+    private ExoPlayer dummyPlayer;
+    private ExoPlayer dummyPlayer2;
 
     private final String CONTROL_URL_BASE = "https://toor.hopto.org/api/v1/control";
     private final String URL_BASE = "https://toor.hopto.org/api/v1";
@@ -323,6 +313,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         playerView2.setUseController(false);
         playerView.setKeepContentOnPlayerReset(true);
         playerViewAudio = findViewById(R.id.playerAudio);
+        fullscreenFrame1 = findViewById(R.id.fullscreen1);
         fullscreenFrame = findViewById(R.id.fullscreen);
 
         fullscreenBack = findViewById(R.id.fullscreenBack);
@@ -344,7 +335,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         detection = findViewById(R.id.detection);
         recordVideo = findViewById(R.id.recordVideo);
         usbMode = findViewById(R.id.usbMode);
-        detectionDialog = findViewById(com.ceylonlabs.imageviewpopup.R.id.popup);
         RelativeLayout.LayoutParams layoutParamsNormal = new RelativeLayout.LayoutParams(width / 2,height / 2);
         RelativeLayout.LayoutParams layoutParamsFullscreen = new RelativeLayout.LayoutParams(width, height);
 
@@ -364,14 +354,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             if(diagonalInches <= SCREEN_SIZE_THRESHOLD) {
                 if (!switcher) {
                     playerView.setVisibility(View.INVISIBLE);
-                    playerView.setPlayer(player);
                     playerView2.setVisibility(View.VISIBLE);
                     //exoplayer(2);
                     switcher = true;
                 } else {
                     playerView.setVisibility(View.VISIBLE);
                     playerView2.setVisibility(View.INVISIBLE);
-                    playerView2.setPlayer(player2);
                     //exoplayer(1);
                     switcher = false;
                 }
@@ -594,35 +582,52 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 //                playerView.setLayoutParams(layoutParamsFullscreen);
 //                playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
 //                playerView2.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
-                /*fullscreenFrame.setVisibility(View.VISIBLE);
+                btnSwitch.setVisibility(View.INVISIBLE);
+                fullscreenFrame1.setVisibility(View.VISIBLE);
+                fullscreenFrame.setVisibility(View.VISIBLE);
                 fullscreenBack.setVisibility(View.VISIBLE);
                 fullscreenFrame.hideController();
                 fullscreenFrame.setUseController(false);
                 fullscreenFrame.setShowBuffering(StyledPlayerView.SHOW_BUFFERING_ALWAYS);
-                fullscreenFrame.setPlayer(player);*/
+                fullscreenFrame1.hideController();
+                fullscreenFrame1.setUseController(false);
+                fullscreenFrame1.setShowBuffering(StyledPlayerView.SHOW_BUFFERING_ALWAYS);
+                playerView2.setVisibility(View.INVISIBLE);
+                playerView.setVisibility(View.INVISIBLE);
+                playerView.setPlayer(dummyPlayer);
+                playerView2.setPlayer(dummyPlayer2);
+                fullscreenFrame1.setPlayer(player);
+                fullscreenFrame.setPlayer(player2);
                 fullscreenBackSwitch = true;
             }
             else {
 //                playerView.setLayoutParams(layoutParamsNormal);
 //                playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM);
 //                playerView2.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM);
-                /*fullscreenFrame.setVisibility(View.INVISIBLE);
-                fullscreenBack.setVisibility(View.INVISIBLE);*/
+                playerView2.setVisibility(View.VISIBLE);
+                playerView.setVisibility(View.VISIBLE);
+                fullscreenFrame1.setVisibility(View.INVISIBLE);
+                fullscreenFrame.setVisibility(View.INVISIBLE);
+                fullscreenBack.setVisibility(View.INVISIBLE);
+                fullscreenFrame1.setPlayer(dummyPlayer);
+                fullscreenFrame.setPlayer(dummyPlayer2);
+                playerView.setPlayer(player);
+                btnSwitch.setVisibility(View.VISIBLE);
+                playerView2.setPlayer(player2);
                 fullscreenBackSwitch = false;
                 }
         });
 
         fullscreenBack.setOnClickListener(v -> {
-            if (!fullscreenSwitch) {
-                fullscreenFrame.setPlayer(player2);
-                playerView.setPlayer(player);
-                fullscreenSwitch = true;
-            }
-            else {
-                fullscreenFrame.setPlayer(player);
-                playerView2.setPlayer(player2);
-                fullscreenSwitch = false;
-            }
+            fullscreenFrame1.setPlayer(dummyPlayer);
+            fullscreenFrame.setPlayer(dummyPlayer2);
+            playerView.setPlayer(player);
+            playerView2.setPlayer(player2);
+            fullscreenFrame1.setVisibility(View.INVISIBLE);
+            fullscreenFrame.setVisibility(View.INVISIBLE);
+            playerView2.setVisibility(View.VISIBLE);
+            playerView.setVisibility(View.VISIBLE);
+            btnSwitch.setVisibility(View.VISIBLE);
         });
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()

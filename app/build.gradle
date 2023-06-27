@@ -10,8 +10,8 @@ android {
         applicationId "com.susiturva.susicam"
         minSdk 26
         targetSdk 33
-        versionCode 14
-        versionName "1.94"
+        versionCode 16
+        versionName "1.96"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -34,14 +34,12 @@ android {
 dependencies {
     implementation 'com.squareup.okhttp3:okhttp:3.11.0'
     implementation 'com.google.android.exoplayer:exoplayer-dash:2.18.7'
-    implementation 'com.github.chathuralakmal:AndroidImagePopup:1.2.2'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'com.google.android.gms:play-services-maps:18.1.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'com.google.ar.sceneform:filament-android:1.17.1'
     implementation 'com.google.android.exoplayer:exoplayer:2.18.7'
-    implementation 'com.google.firebase:firebase-crashlytics-buildtools:2.9.5'
     implementation 'androidx.work:work-runtime:2.8.1'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'

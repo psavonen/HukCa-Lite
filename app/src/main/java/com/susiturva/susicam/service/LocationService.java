@@ -16,7 +16,6 @@ import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.android.gms.maps.model.LatLng;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.commons.codec.binary.StringUtils;
 import com.susiturva.susicam.DatabaseHelper;
 import com.susiturva.susicam.MapsActivity;
 import com.susiturva.susicam.MyDBHandler;
@@ -32,13 +31,9 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Timer;
@@ -95,7 +90,7 @@ public class LocationService extends Service {
         String serial_hash = srnumero;
         String input = "Off";
         try {
-            if (!StringUtils.equals(null, intent.getStringExtra("inputExtra"))) {
+            if (intent.getStringExtra("inputExtra") != null) {
                 input = intent.getStringExtra("inputExtra");
             }
         } catch (Exception e) {
