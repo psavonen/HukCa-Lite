@@ -315,7 +315,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         playerViewAudio = findViewById(R.id.playerAudio);
         fullscreenFrame1 = findViewById(R.id.fullscreen1);
         fullscreenFrame = findViewById(R.id.fullscreen);
-
+        fullscreenFrame.hideController();
+        fullscreenFrame.setUseController(false);
+        fullscreenFrame.setShowBuffering(StyledPlayerView.SHOW_BUFFERING_ALWAYS);
+        fullscreenFrame1.hideController();
+        fullscreenFrame1.setUseController(false);
+        fullscreenFrame1.setShowBuffering(StyledPlayerView.SHOW_BUFFERING_ALWAYS);
         fullscreenBack = findViewById(R.id.fullscreenBack);
         btnSwitch = findViewById(R.id.connect);
         koira = findViewById(R.id.keskitaKoiraan);
@@ -333,6 +338,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         toiminnot = findViewById(R.id.toiminnot);
         toiminnot.setText("<");
         detection = findViewById(R.id.detection);
+        detectionDialog = findViewById(R.id.popup);
         recordVideo = findViewById(R.id.recordVideo);
         usbMode = findViewById(R.id.usbMode);
         RelativeLayout.LayoutParams layoutParamsNormal = new RelativeLayout.LayoutParams(width / 2,height / 2);
@@ -428,7 +434,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-                    detectionDialog.setImageURI(uri);
+                    if (uri != null) {
+                        detectionDialog.setImageURI(uri);
+                    }
                     detectionDialog.setTooltipText("HAVAINTO");
                     detectionDialog.setVisibility(View.VISIBLE);
                     detectionDialog.setOnClickListener(v -> {
@@ -576,22 +584,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
 
         fullscreen.setOnClickListener(v -> {
-           /* Intent i = new Intent(MapsActivity.this, VideoActivity.class);
-            startActivity(i);*/
             if (!fullscreenBackSwitch) {
-//                playerView.setLayoutParams(layoutParamsFullscreen);
-//                playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
-//                playerView2.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
                 btnSwitch.setVisibility(View.INVISIBLE);
                 fullscreenFrame1.setVisibility(View.VISIBLE);
                 fullscreenFrame.setVisibility(View.VISIBLE);
                 fullscreenBack.setVisibility(View.VISIBLE);
-                fullscreenFrame.hideController();
-                fullscreenFrame.setUseController(false);
-                fullscreenFrame.setShowBuffering(StyledPlayerView.SHOW_BUFFERING_ALWAYS);
-                fullscreenFrame1.hideController();
-                fullscreenFrame1.setUseController(false);
-                fullscreenFrame1.setShowBuffering(StyledPlayerView.SHOW_BUFFERING_ALWAYS);
                 playerView2.setVisibility(View.INVISIBLE);
                 playerView.setVisibility(View.INVISIBLE);
                 playerView.setPlayer(dummyPlayer);
@@ -601,9 +598,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 fullscreenBackSwitch = true;
             }
             else {
-//                playerView.setLayoutParams(layoutParamsNormal);
-//                playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM);
-//                playerView2.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM);
                 playerView2.setVisibility(View.VISIBLE);
                 playerView.setVisibility(View.VISIBLE);
                 fullscreenFrame1.setVisibility(View.INVISIBLE);
@@ -628,6 +622,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             playerView2.setVisibility(View.VISIBLE);
             playerView.setVisibility(View.VISIBLE);
             btnSwitch.setVisibility(View.VISIBLE);
+            fullscreenBackSwitch = false;
         });
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -1169,14 +1164,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         } catch (Exception e) {
             e.printStackTrace();
         }
-//        if (Build.VERSION.SDK_INT < 19) {
-//            sendBroadcast(new Intent(Intent.ACTION_MEDIA_MOUNTED,
-//                    Uri.parse(file.getPath() + "/" + filename)));
-//        }
-//        else {
-//            sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
-//                    Uri.parse(file.getPath() + "/" + filename)));
-//        }
 
         return urlz;
     }
@@ -1482,6 +1469,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 "Hahmontunnitus pois päältä" ,
                 Toast.LENGTH_SHORT).show();
         setControl(urli);
+    }
+    private void checkStream(ExoPlayer player){
+
+        if(!player.isPlaying()) {
+            exoplayerTwoStreams();
+        }
     }
 }
 
