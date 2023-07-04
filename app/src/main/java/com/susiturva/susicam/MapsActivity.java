@@ -379,9 +379,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 koira.setVisibility(View.VISIBLE);
                 aani.setVisibility(View.VISIBLE);
                 lahetys.setVisibility(View.VISIBLE);
-                if (diagonalInches <= SCREEN_SIZE_THRESHOLD) {
+                //if (diagonalInches <= SCREEN_SIZE_THRESHOLD) {
                     fullscreen.setVisibility(View.VISIBLE);
-                }
+                //}
                 piilossa = false;
                 sendSound.setVisibility(View.VISIBLE);
                 recordVideo.setVisibility(View.VISIBLE);
@@ -392,9 +392,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 yovalo.setVisibility(View.INVISIBLE);
                 koira.setVisibility(View.INVISIBLE);
                 aani.setVisibility(View.INVISIBLE);
-                if (diagonalInches <= SCREEN_SIZE_THRESHOLD) {
+                //if (diagonalInches <= SCREEN_SIZE_THRESHOLD) {
                     fullscreen.setVisibility(View.INVISIBLE);
-                }
+                //}
                 lahetys.setVisibility(View.INVISIBLE);
                 sendSound.setVisibility(View.INVISIBLE);
                 recordVideo.setVisibility(View.INVISIBLE);
