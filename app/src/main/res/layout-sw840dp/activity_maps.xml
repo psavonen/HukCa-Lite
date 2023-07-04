@@ -48,7 +48,15 @@
         android:layout_width="match_parent"
         android:visibility="invisible"
         />
-
+    <com.google.android.exoplayer2.ui.StyledPlayerView
+        android:id="@+id/fullscreen1"
+        android:layout_height="match_parent"
+        android:layout_gravity="center_vertical"
+        android:background="@color/black"
+        android:layout_width="match_parent"
+        android:layout_toStartOf="@id/Vstrut"
+        android:visibility="invisible"
+        />
     <com.google.android.exoplayer2.ui.StyledPlayerView
         android:id="@+id/player"
         android:layout_width="640dp"
@@ -81,6 +89,15 @@
         android:background="@android:color/transparent"
         android:visibility="invisible"/>
     />
+    <ImageView
+        android:id="@id/popup"
+        android:layout_alignParentRight="true"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/black"
+        android:layout_toLeftOf="@id/detection"
+        android:visibility="invisible"
+        />
     <TextView
         android:id="@+id/onOff"
         android:textColor="#FFFFFF"
@@ -136,9 +153,10 @@
         android:layout_below="@id/battery"
         android:layout_height="wrap_content"
         android:layout_marginTop="5dp"
-        android:layout_marginEnd="1dp"
+        android:layout_marginStart="2dp"
         android:layout_toStartOf="@+id/aani"
-        android:src="@drawable/fullscreen_black_24dp"
+        android:background="@color/hukca_orange"
+        android:src="@drawable/baseline_fullscreen_24"
         android:visibility="invisible"
         />
     <ImageButton
@@ -147,21 +165,22 @@
         android:layout_below="@id/battery"
         android:layout_height="wrap_content"
         android:layout_marginTop="5dp"
-        android:layout_marginEnd="1dp"
+        android:layout_marginStart="2dp"
         android:layout_toStartOf="@+id/yovalo"
-        android:src="@drawable/volume_off_black_24dp"
+        android:background="@color/hukca_orange"
+        android:src="@drawable/baseline_volume_off_24"
         android:visibility="invisible"
         />
     <ImageButton
         android:id="@+id/lahetys"
         android:layout_width="80dp"
         android:layout_below="@id/battery"
-        android:layout_height="68dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="5dp"
-        android:layout_marginEnd="1dp"
         android:layout_toStartOf="@+id/aani"
-        android:src="@drawable/ic_baseline_play_arrow_24"
-        app:tint="@color/black"
+        android:background="@color/hukca_orange"
+        android:layout_marginStart="2dp"
+        android:src="@drawable/baseline_play_arrow_24"
         android:visibility="invisible"
         />
 
@@ -172,7 +191,9 @@
         android:layout_toStartOf="@id/toiminnot"
         android:layout_width="80dp"
         android:layout_height="wrap_content"
-        android:src="@drawable/flashlight_off_40"
+        android:layout_marginStart="2dp"
+        android:background="@color/hukca_orange"
+        android:src="@drawable/baseline_flashlight_off_24"
         android:visibility="invisible"
         />
 
@@ -183,7 +204,9 @@
         android:layout_marginTop="5dp"
         android:layout_width="80dp"
         android:layout_height="wrap_content"
-        android:src="@drawable/brightness_7_black_24dp"
+        android:layout_marginStart="2dp"
+        android:background="@color/hukca_orange"
+        android:src="@drawable/baseline_brightness_7_24"
         android:visibility="invisible"
         />
     <Button
@@ -192,8 +215,11 @@
         android:layout_marginTop="5dp"
         android:layout_toStartOf="@id/lahetys"
         android:layout_width="80dp"
-        android:layout_height="68dp"
+        android:layout_height="48dp"
         android:text="Koira"
+        android:layout_marginStart="2dp"
+        android:background="@color/hukca_orange"
+        android:textColor="@color/hukca_green"
         android:visibility="invisible"
         />
     <ImageButton
@@ -203,7 +229,9 @@
         android:layout_below="@id/led"
         android:layout_height="wrap_content"
         android:layout_toStartOf="@+id/recordVideo"
-        android:src="@drawable/record_voice_over_black_24dp"
+        android:layout_marginStart="2dp"
+        android:background="@color/hukca_orange"
+        android:src="@drawable/baseline_record_voice_over_24"
         android:translationZ="1dp"
         android:visibility="invisible"
         />
@@ -212,8 +240,10 @@
         android:layout_width="80dp"
         android:layout_marginTop="5dp"
         android:layout_below="@id/led"
-        android:layout_height="70dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
         android:layout_toStartOf="@+id/usbMode"
+        android:background="@color/hukca_orange"
         android:src="@drawable/record_video"
         android:translationZ="1dp"
         android:visibility="invisible"
@@ -237,6 +267,10 @@
         android:layout_width="50dp"
         android:layout_height="68dp"
         android:text=""
+        android:layout_marginStart="2dp"
+        android:textSize="24sp"
+        android:background="@color/hukca_green"
+        android:textColor="@color/hukca_orange"
         android:visibility="visible"
         />
     <ImageButton
@@ -250,13 +284,5 @@
         android:visibility="invisible"
         android:layout_marginTop="5dp"
         />
-    <ImageView
-        android:id="@id/popup"
-        android:layout_alignParentRight="true"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@color/black"
-        android:layout_toLeftOf="@id/detection"
-        android:visibility="invisible"
-        />
+
 </RelativeLayout>
