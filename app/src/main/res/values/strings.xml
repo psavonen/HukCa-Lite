@@ -8,7 +8,7 @@
     <string name="yovalo_tooltip">Kytke pimeänäkö pääll</string>
     <string name="valot_tooltip">Kytke LED-valo päälle</string>
     <string name="fullscreen_tooltip">Kokonäytön videokuva</string>
-    <string name="menu_tooltip">Näytä ja piilota yläpalkki</string>
+    <string name="menu_tooltip">Näytä menu</string>
     <string name="title_activity_maps">MapsActivity</string>
     <string name="google_maps_key">AIzaSyCkcVae2K_DJxU6D6XIiJznEmvqbQBc7mI</string>
 
