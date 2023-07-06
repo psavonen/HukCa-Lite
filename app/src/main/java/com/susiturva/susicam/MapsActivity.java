@@ -403,7 +403,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 toiminnot.setText("<");
             }
         });
-
+        recordVideo.setTooltipText(getString(R.string.recordVideo_tooltip));
         recordVideo.setOnClickListener(v -> {
             if (!recordVideoOn) {
                 String urli = URL_BASE + "/record/" + srnumero + "/true?source=front&storage=camera";
@@ -446,6 +446,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             // thread.start();
 
         });
+        koira.setTooltipText(getString(R.string.koira_tooltip));
         koira.setOnClickListener(v -> firstTime = true);
 
         usbMode.setOnClickListener(v -> {
@@ -470,7 +471,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             AlertDialog dialog = builder.create();
             dialog.show();
         });
-
+        lahetys.setTooltipText(getString(R.string.lahetys_tooltip));
         lahetys.setOnClickListener(v -> {
 
             String sound = "pistol";
@@ -482,6 +483,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     Toast.LENGTH_LONG).show();
 
         });
+        sendSound.setTooltipText(getString(R.string.sendSound_tooltip));
         sendSound.setOnClickListener(view -> {
             if (!broadcast) {
                 Date date = new Date();
@@ -502,7 +504,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
                 Toast.makeText(MapsActivity.this, "Nauhoitetaan ääntä",
                         Toast.LENGTH_LONG).show();
-                sendSound.setImageResource(R.drawable.baseline_record_voice_over_24);
+                sendSound.setImageResource(R.drawable.baseline_voice_over_off_24);
                 broadcast = true;
                 try {
                     final Handler handler = new Handler(Looper.getMainLooper());
@@ -543,6 +545,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 broadcast = false;
             }
         });
+        aani.setTooltipText(getString(R.string.aani_tooltip));
         aani.setOnClickListener(v -> {
             if (!sound) {
                 playerAudio.prepare();
@@ -557,6 +560,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
 
         });
+        yovalo.setTooltipText(getString(R.string.yovalo_tooltip));
         yovalo.setOnClickListener(v -> {
             String urli = CONTROL_URL_BASE + "/" + srnumero + "/night_vision/";
             if (!nightVision) {
@@ -569,6 +573,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 nightVision = false;
             }
         });
+        valot.setTooltipText(getString(R.string.valot_tooltip));
         valot.setOnClickListener(v -> {
             String urli = CONTROL_URL_BASE + "/" + srnumero + "/ir_led/";
             if (!irLeds) {
@@ -581,7 +586,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 irLeds = false;
             }
         });
-
+        fullscreen.setTooltipText(getString(R.string.fullscreen_tooltip));
         fullscreen.setOnClickListener(v -> {
             if (!fullscreenBackSwitch) {
                 btnSwitch.setVisibility(View.INVISIBLE);
