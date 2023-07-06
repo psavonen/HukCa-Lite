@@ -176,10 +176,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private boolean fullscreenBackSwitch = false;
     private boolean tunnistuskytkenta = false;
     private boolean runner = true;
+    private boolean menuswitch = false;
     private Button btnSwitch;
     private ImageButton fullscreenBack;
     private Button toiminnot;
     private Button koira;
+    private Button menu;
 
     private ImageButton aani;
     private ImageButton valot;
@@ -324,6 +326,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         fullscreenBack = findViewById(R.id.fullscreenBack);
         btnSwitch = findViewById(R.id.connect);
         koira = findViewById(R.id.keskitaKoiraan);
+        menu = findViewById(R.id.menu);
         lahetys = (ImageButton) findViewById(R.id.lahetys);
         valot = (ImageButton) findViewById(R.id.led);
         yovalo = (ImageButton) findViewById(R.id.yovalo);
@@ -341,8 +344,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         detectionDialog = findViewById(R.id.popup);
         recordVideo = findViewById(R.id.recordVideo);
         usbMode = findViewById(R.id.usbMode);
-        RelativeLayout.LayoutParams layoutParamsNormal = new RelativeLayout.LayoutParams(width / 2, height / 2);
-        RelativeLayout.LayoutParams layoutParamsFullscreen = new RelativeLayout.LayoutParams(width, height);
 
         if (!isMyServiceRunning(LocationService.class)) {
             startService();
@@ -352,6 +353,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (diagonalInches >= SCREEN_SIZE_THRESHOLD) {
                 playerView.setVisibility(View.VISIBLE);
                 playerView2.setVisibility(View.VISIBLE);
+            }
+            else {
+                if (getSupportActionBar() != null) {
+                    getSupportActionBar().hide();
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -379,9 +385,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 koira.setVisibility(View.VISIBLE);
                 aani.setVisibility(View.VISIBLE);
                 lahetys.setVisibility(View.VISIBLE);
-                //if (diagonalInches <= SCREEN_SIZE_THRESHOLD) {
-                    fullscreen.setVisibility(View.VISIBLE);
-                //}
+                if (diagonalInches <= SCREEN_SIZE_THRESHOLD) {
+                    menu.setVisibility(View.VISIBLE);
+                }
+                fullscreen.setVisibility(View.VISIBLE);
                 piilossa = false;
                 sendSound.setVisibility(View.VISIBLE);
                 recordVideo.setVisibility(View.VISIBLE);
@@ -392,9 +399,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 yovalo.setVisibility(View.INVISIBLE);
                 koira.setVisibility(View.INVISIBLE);
                 aani.setVisibility(View.INVISIBLE);
-                //if (diagonalInches <= SCREEN_SIZE_THRESHOLD) {
-                    fullscreen.setVisibility(View.INVISIBLE);
-                //}
+                if (diagonalInches <= SCREEN_SIZE_THRESHOLD) {
+                    menu.setVisibility(View.INVISIBLE);
+                }
+                fullscreen.setVisibility(View.INVISIBLE);
                 lahetys.setVisibility(View.INVISIBLE);
                 sendSound.setVisibility(View.INVISIBLE);
                 recordVideo.setVisibility(View.INVISIBLE);
@@ -448,6 +456,22 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
         koira.setTooltipText(getString(R.string.koira_tooltip));
         koira.setOnClickListener(v -> firstTime = true);
+
+        menu.setTooltipText(getString(R.string.menu_tooltip));
+        menu.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(!menuswitch) {
+                    getSupportActionBar().show();
+                    menuswitch = true;
+                }
+                else {
+                    getSupportActionBar().hide();
+                    menuswitch = false;
+                }
+
+            }
+        });
 
         usbMode.setOnClickListener(v -> {
             String urli = "https://toor.hopto.org/api/v1/control/" + srnumero + "/activate_usb/true";

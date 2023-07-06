@@ -229,6 +229,18 @@
         android:visibility="invisible"
 
         android:contentDescription="TODO" />
+    <Button
+        android:id="@+id/menu"
+        android:layout_below="@id/led"
+        android:layout_marginTop="5dp"
+        android:layout_toStartOf="@id/sendSound"
+        android:layout_width="80dp"
+        android:layout_height="48dp"
+        android:text="Menu"
+        android:background="@color/hukca_orange"
+        android:textColor="@color/hukca_green"
+        android:visibility="invisible"
+        />
     <ImageButton
         android:id="@+id/sendSound"
         android:layout_width="80dp"
