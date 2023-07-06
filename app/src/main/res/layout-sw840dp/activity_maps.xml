@@ -38,7 +38,7 @@
         android:layout_height="wrap_content"
         android:background="@color/hukca_green"
         android:minHeight="?attr/actionBarSize"
-        android:theme="?attr/actionBarTheme"
+        android:theme="@style/Theme.SusiCam"
         tools:layout_editor_absoluteX="0dp"
         tools:layout_editor_absoluteY="0dp" />
 
