@@ -10,6 +10,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -39,13 +40,13 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -215,8 +216,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private MediaRecorder mediaRecorder;
     private Random random;
     private String RandomAudioFileName = "ABCDEFGHIJKLMNOP";
-    public static final int RequestPermissionCode = 1;
-    private MediaPlayer mediaPlayer;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -285,6 +284,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
         decorView.setSystemUiVisibility(uiOptions);
         setContentView(R.layout.activity_maps);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         try {
             DisplayMetrics displayMetrics = new DisplayMetrics();
@@ -456,23 +459,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
         koira.setTooltipText(getString(R.string.koira_tooltip));
         koira.setOnClickListener(v -> firstTime = true);
-
-        menu.setTooltipText(getString(R.string.menu_tooltip));
-        menu.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(!menuswitch) {
+        if (diagonalInches <= SCREEN_SIZE_THRESHOLD) {
+            menu.setTooltipText(getString(R.string.menu_tooltip));
+            menu.setOnClickListener(new View.OnClickListener() {
+                @SuppressLint("RestrictedApi")
+                @Override
+                public void onClick(View v) {
                     getSupportActionBar().show();
-                    menuswitch = true;
+                    toolbar.showOverflowMenu();
                 }
-                else {
-                    getSupportActionBar().hide();
-                    menuswitch = false;
-                }
-
-            }
-        });
-
+            });
+        }
         usbMode.setOnClickListener(v -> {
             String urli = "https://toor.hopto.org/api/v1/control/" + srnumero + "/activate_usb/true";
             AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
@@ -1507,6 +1504,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 "Hahmontunnitus pois päältä",
                 Toast.LENGTH_SHORT).show();
         setControl(urli);
+    }
+    @Override
+    public void openOptionsMenu() {
+        Configuration cfg = getResources().getConfiguration();
+        if( (cfg.screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK)>Configuration.SCREENLAYOUT_SIZE_LARGE){
+            int shelf = cfg.screenLayout;
+            cfg.screenLayout = Configuration.SCREENLAYOUT_SIZE_LARGE;
+            super.openOptionsMenu();
+            cfg.screenLayout = shelf;
+        }else{
+            super.openOptionsMenu();
+        }
     }
 }
 
