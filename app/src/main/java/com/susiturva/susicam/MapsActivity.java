@@ -1005,7 +1005,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         handlePlaybackError();
         Toast.makeText(MapsActivity.this,
                 "Pieni hetki, video yhdistyy.",
-                Toast.LENGTH_LONG).show();
+                Toast.LENGTH_SHORT).show();
     }
 
     private void exoplayer(int stream) {
@@ -1674,7 +1674,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void showLogoWhenNoStream(){
         try {
             if (!exoplayerPlaying(player)) {
-                btnSwitch.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.hucka_green, null));
+                btnSwitch.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.hucka_play, null));
             } else {
                 btnSwitch.setBackground(null);
                 btnSwitch.setBackgroundColor(Color.TRANSPARENT);
