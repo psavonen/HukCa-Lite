@@ -11,9 +11,13 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -64,11 +68,18 @@ import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
+import com.google.android.gms.maps.model.Dash;
+import com.google.android.gms.maps.model.Dot;
+import com.google.android.gms.maps.model.Gap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PatternItem;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.TileOverlayOptions;
@@ -90,6 +101,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
@@ -117,15 +129,20 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private StyledPlayerView fullscreenFrame1;
     private StyledPlayerView fullscreenFrame;
     private LatLng latLong = new LatLng(0, 0);
+    private LatLng latLng;
     private List<LatLng> points = new ArrayList<>();
     private ArrayList<LatLng> route = new ArrayList<>();
     private Polyline gpsTrack;
+    private Polyline lineInBetween;
+    private Circle circle;
     private HashMap<String, Marker> mMarkers = new HashMap<>();
     private Double alt;
     private Double speed;
     private Double bearing;
     //private float dpWidth;
     private Double diagonalInches;
+    private static final double EARTH_RADIUS = 6378100.0;
+
     private Long uptime;
     private final long MIN_TIME = 1000; // 1 second
     private final long MIN_DIST = 0; // 5 Meters
@@ -136,6 +153,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private int active_streams;
     private int camera_mode;
     private int checkId;
+    private int offset;
     private int detected_id;
     private int detected_ago;
     private int ir_active;
@@ -146,6 +164,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private final int SOUND_EFFECT_VOLUME = 100;
     private ProgressBar battery;
     private Marker marker = null;
+    private Marker pmarker;
     private Marker puhelin;
     private String detected_object;
     private String last_update;
@@ -178,11 +197,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private boolean tunnistuskytkenta = false;
     private boolean runner = true;
     private boolean menuswitch = false;
-    private Button btnSwitch;
+    private ImageButton btnSwitch;
     private ImageButton fullscreenBack;
     private Button toiminnot;
     private Button koira;
     private Button menu;
+    private Button keskitaPuhelimeen;
 
     private ImageButton aani;
     private ImageButton valot;
@@ -216,6 +236,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private MediaRecorder mediaRecorder;
     private Random random;
     private String RandomAudioFileName = "ABCDEFGHIJKLMNOP";
+    private Resources res;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -288,6 +309,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        res = this.getResources();
+
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         try {
             DisplayMetrics displayMetrics = new DisplayMetrics();
@@ -347,6 +370,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         detectionDialog = findViewById(R.id.popup);
         recordVideo = findViewById(R.id.recordVideo);
         usbMode = findViewById(R.id.usbMode);
+        keskitaPuhelimeen = findViewById(R.id.keskitaPuhelimeen);
 
         if (!isMyServiceRunning(LocationService.class)) {
             startService();
@@ -386,6 +410,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 valot.setVisibility(View.VISIBLE);
                 yovalo.setVisibility(View.VISIBLE);
                 koira.setVisibility(View.VISIBLE);
+                keskitaPuhelimeen.setVisibility(View.VISIBLE);
                 aani.setVisibility(View.VISIBLE);
                 lahetys.setVisibility(View.VISIBLE);
                 if (diagonalInches <= SCREEN_SIZE_THRESHOLD) {
@@ -401,6 +426,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 valot.setVisibility(View.INVISIBLE);
                 yovalo.setVisibility(View.INVISIBLE);
                 koira.setVisibility(View.INVISIBLE);
+                keskitaPuhelimeen.setVisibility(View.INVISIBLE);
                 aani.setVisibility(View.INVISIBLE);
                 if (diagonalInches <= SCREEN_SIZE_THRESHOLD) {
                     menu.setVisibility(View.INVISIBLE);
@@ -457,8 +483,19 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             // thread.start();
 
         });
+
         koira.setTooltipText(getString(R.string.koira_tooltip));
         koira.setOnClickListener(v -> firstTime = true);
+
+        keskitaPuhelimeen.setTooltipText(getString(R.string.puhelin_tooltip));
+        keskitaPuhelimeen.setOnClickListener(v -> {
+            new Handler().postDelayed(() -> {
+                new Handler().postDelayed(() ->
+                        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng)), 100);
+                mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
+            }, 100);
+        });
+
         if (diagonalInches <= SCREEN_SIZE_THRESHOLD) {
             menu.setTooltipText(getString(R.string.menu_tooltip));
             menu.setOnClickListener(new View.OnClickListener() {
@@ -915,11 +952,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         playerView.hideController();
         playerView.setPlayer(player);
         player.addMediaItem(firstStream);
-
         // Prepare the player.
         player.prepare();
         player.play();
-
         player2 = new ExoPlayer.Builder(this)
                 .setTrackSelector(trackSelector)
                 .setBandwidthMeter(defaultBandwidthMeter)
@@ -1207,7 +1242,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         try {
             LocationListener locationListener = location -> {
 
-                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                latLng = new LatLng(location.getLatitude(), location.getLongitude());
                 double dlat = location.getLatitude();
                 double dlgn = location.getLongitude();
                 double currentSpeed = location.getSpeed();
@@ -1222,11 +1257,23 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 float distance = results[0] / 1000;
                 double dist = (double) Math.round(distance * 100d) / 100d;
                 vmatka.setText("Et:" + dist + "km");
-                if (puhelin != null) {
+ /*               if (puhelin != null) {
                     puhelin.remove();
                 }
                 puhelin = mMap.addMarker(new MarkerOptions().position(latLng).title("Puhelin").icon(BitmapDescriptorFactory.fromResource(R.drawable.human_male_icon_green)));
-                puhelin.setTag(new Float(0.0));
+                puhelin.setTag(new Float(0.0));*/
+                MarkerOptions options = new MarkerOptions();
+                options.position(getCoords(latLng));
+                options.icon(BitmapDescriptorFactory.fromBitmap(getBitmap(latLng)));
+                if (pmarker != null) {
+                    pmarker.remove();
+                }
+                pmarker = mMap.addMarker(options);
+
+                if (lineInBetween != null)  {
+                    lineInBetween.remove();
+                }
+                drawLineInBetween(latLng, latLong );
             };
 
             LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
@@ -1252,9 +1299,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         Toast.LENGTH_LONG).show();
                 new Handler().postDelayed(() ->
                                 player.setPlayWhenReady(true),
-                        4000);
-
-            }
+                        10000);
+                }
         });
         player2.addListener(new Player.Listener() {
             @Override
@@ -1262,7 +1308,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Player.Listener.super.onPlayerError(error);
                 new Handler().postDelayed(() ->
                                 player2.setPlayWhenReady(true),
-                        4000);
+                        10000);
             }
         });
     }
@@ -1517,6 +1563,86 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             super.openOptionsMenu();
         }
     }
+
+    private void drawLineInBetween(LatLng dogo, LatLng phone) {
+        try {
+            PolylineOptions polylineOptions = new PolylineOptions();
+            List<PatternItem> pattern = Arrays.asList(new Dot(), new Gap(20), new Dash(30), new Gap(20));
+            polylineOptions.pattern(pattern);
+            polylineOptions.color(Color.BLUE);
+            polylineOptions.width(4);
+            List<LatLng> lattis = new ArrayList<>();
+            lattis.add(dogo);
+            lattis.add(phone);
+            lineInBetween = mMap.addPolyline(polylineOptions);
+            lineInBetween.setPoints(lattis);
+            lineInBetween.setZIndex(1000);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    private int convertMetersToPixels(double lat, double lng, double radiusInMeters) {
+
+        double lat1 = radiusInMeters / EARTH_RADIUS;
+        double lng1 = radiusInMeters / (EARTH_RADIUS * Math.cos((Math.PI * lat / 180)));
+
+        double lat2 = lat + lat1 * 180 / Math.PI;
+        double lng2 = lng + lng1 * 180 / Math.PI;
+
+        Point p1 = mMap.getProjection().toScreenLocation(new LatLng(lat, lng));
+        Point p2 = mMap.getProjection().toScreenLocation(new LatLng(lat2, lng2));
+
+        return Math.abs(p1.x - p2.x);
+    }
+    private Bitmap getBitmap(LatLng latLng) {
+
+        // fill color
+        Paint paint1 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paint1.setColor(0x110000FF);
+        paint1.setStyle(Paint.Style.FILL);
+
+        // stroke color
+        Paint paint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paint2.setColor(0xFF0000FF);
+        paint2.setStyle(Paint.Style.STROKE);
+
+        // icon
+        Bitmap icon = BitmapFactory.decodeResource(this.getResources(), R.drawable.human_male_icon_green);
+
+        // circle radius - 200 meters
+        int radius = offset = convertMetersToPixels(latLng.latitude, latLng.longitude, 100);
+
+        // if zoom too small
+        if (radius < icon.getWidth() / 2) {
+
+            radius = icon.getWidth() / 2;
+        }
+
+        // create empty bitmap
+        Bitmap b = Bitmap.createBitmap(radius * 2, radius * 2, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(b);
+
+        // draw blue area if area > icon size
+        if (radius != icon.getWidth() / 2) {
+
+            c.drawCircle(radius, radius, radius, paint1);
+            c.drawCircle(radius, radius, radius, paint2);
+        }
+
+        // draw icon
+        c.drawBitmap(icon, radius - icon.getWidth() / 2, radius - icon.getHeight() / 2, new Paint());
+
+        return b;
+    }
+    private LatLng getCoords(LatLng latLng) {
+
+        Projection proj = mMap.getProjection();
+        Point p = proj.toScreenLocation(latLng);
+        p.set(p.x, p.y + offset);
+
+        return proj.fromScreenLocation(p);
+    }
+
 }
 
 

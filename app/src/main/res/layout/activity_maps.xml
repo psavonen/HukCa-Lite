@@ -31,7 +31,7 @@
         android:layout_height="match_parent"
         android:layout_alignParentEnd="true"
         android:layout_marginEnd="350dp" />
-    <Button
+    <ImageButton
         android:id="@+id/connect"
         android:layout_width="370dp"
         android:layout_height="match_parent"
@@ -159,6 +159,7 @@
         android:layout_alignParentRight="true"
         android:secondaryProgressTint="#ffffff"
         android:layout_marginTop="2dp"
+        android:layout_marginEnd="20dp"
         />
 
     <ImageButton
@@ -211,14 +212,12 @@
         android:background="@color/hukca_orange"
         android:visibility="invisible"
         />
-
-
-
     <Button
         android:id="@+id/keskitaKoiraan"
-        android:layout_below="@id/battery"
+        android:layout_below="@id/led"
         android:layout_marginTop="5dp"
-        android:layout_toStartOf="@id/lahetys"
+        android:layout_marginEnd="2dp"
+        android:layout_toStartOf="@id/keskitaPuhelimeen"
         android:layout_width="80dp"
         android:layout_height="48dp"
         android:text="Koira"
@@ -226,6 +225,19 @@
         android:textColor="@color/hukca_green"
         android:visibility="invisible"
         />
+   <Button
+        android:id="@+id/keskitaPuhelimeen"
+        android:layout_below="@id/led"
+        android:layout_marginTop="5dp"
+        android:layout_marginEnd="2dp"
+        android:layout_toStartOf="@id/zoom"
+        android:layout_width="80dp"
+        android:layout_height="48dp"
+        android:text="puhelin"
+        android:background="@color/hukca_orange"
+        android:textColor="@color/hukca_green"
+        android:visibility="invisible"
+     />
     <ImageButton
         android:id="@+id/zoom"
         android:layout_width="80dp"
@@ -233,7 +245,6 @@
         android:layout_below="@id/led"
         android:layout_height="wrap_content"
         android:layout_toStartOf="@+id/toiminnot"
-        android:layout_marginStart="2dp"
         android:src="@drawable/baseline_fullscreen_24"
         android:background="@color/hukca_orange"
         android:translationZ="1dp"
@@ -244,10 +255,11 @@
         android:id="@+id/menu"
         android:layout_below="@id/led"
         android:layout_marginTop="5dp"
-        android:layout_toStartOf="@id/sendSound"
+        android:layout_toStartOf="@id/keskitaKoiraan"
         android:layout_width="80dp"
         android:layout_height="48dp"
         android:text="Menu"
+        android:layout_marginEnd="2dp"
         android:background="@color/hukca_orange"
         android:textColor="@color/hukca_green"
         android:visibility="invisible"
@@ -256,9 +268,9 @@
         android:id="@+id/sendSound"
         android:layout_width="80dp"
         android:layout_marginTop="5dp"
-        android:layout_below="@id/led"
+        android:layout_below="@id/battery"
         android:layout_height="wrap_content"
-        android:layout_toStartOf="@+id/zoom"
+        android:layout_toStartOf="@+id/lahetys"
         android:layout_marginStart="2dp"
         android:src="@drawable/baseline_record_voice_over_24"
         android:background="@color/hukca_orange"
@@ -269,9 +281,10 @@
         android:id="@+id/recordVideo"
         android:layout_width="80dp"
         android:layout_marginTop="5dp"
+        android:layout_marginEnd="2dp"
         android:layout_below="@id/led"
         android:layout_height="wrap_content"
-        android:layout_toStartOf="@+id/sendSound"
+        android:layout_toStartOf="@+id/menu"
         android:src="@drawable/record_video"
         android:translationZ="1dp"
         android:background="@color/hukca_orange"
