@@ -459,13 +459,22 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         recordVideo.setOnClickListener(v -> {
             if (!recordVideoOn) {
                 String urli = URL_BASE + "/record/" + srnumero + "/true?source=front&storage=camera";
+                String urlib = URL_BASE + "/record/" + srnumero + "/true?source=back&storage=camera";
                 setControl(urli);
+                setControl(urlib);
                 recordVideo.setImageResource(R.drawable.record_video_stop);
+                Toast.makeText(MapsActivity.this, "Nauhoitus päällä",
+                        Toast.LENGTH_SHORT).show();
                 recordVideoOn = true;
+
             } else {
                 String urli = URL_BASE + "/record/" + srnumero + "/false?source=front&storage=camera";
+                String urlib = URL_BASE + "/record/" + srnumero + "/false?source=back&storage=camera";
                 setControl(urli);
+                setControl(urlib);
                 recordVideo.setImageResource(R.drawable.record_video);
+                Toast.makeText(MapsActivity.this, "Nauhoitus pois päältä",
+                        Toast.LENGTH_SHORT).show();
                 recordVideoOn = false;
             }
         });
@@ -511,6 +520,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng)), 100);
                         mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
                     }, 100);
+                }
+                else {
+                    Toast.makeText(MapsActivity.this, "Ei GPS yhteyttä ",
+                            Toast.LENGTH_SHORT).show();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -625,9 +638,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
         aani.setTooltipText(getString(R.string.aani_tooltip));
+        try {
+            playerAudio.prepare();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
         aani.setOnClickListener(v -> {
             if (!sound) {
-                playerAudio.prepare();
                 playerAudio.play();
                 aani.setImageResource(R.drawable.baseline_volume_up_24);
                 sound = true;
