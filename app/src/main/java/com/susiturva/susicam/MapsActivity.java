@@ -153,6 +153,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private int active_streams;
     private int camera_mode;
     private int checkId;
+    private int checkDownloadId;
     private int offset;
     private int detected_id;
     private int detected_ago;
@@ -176,7 +177,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private String stream_2_key;
     private String audio_key;
     private String audioFilename;
-
     private DatabaseHelper db;
     private List<MyDBHandler> sarjanumerot = new ArrayList<>();
     public static String srnumero;
@@ -220,9 +220,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ExoPlayer dummyPlayer;
     private ExoPlayer dummyPlayer2;
 
-    private final String CONTROL_URL_BASE = "https://toor.hopto.org/api/v1/control";
+    private final String CONTROL_URL_BASE = "https://toor.hopto.org/api/v1/control/";
+    private final String DETECTOR_CONTORL_URL_BASE = "https://toor.hopto.org/api/v1/detector/control/";
     private final String URL_BASE = "https://toor.hopto.org/api/v1";
     private final String USERNAME_PASSWORD = "susipurkki:susipurkki";
+    private final String XAPIKEY = "awidjilherg";
     public static final String RTSP_SUSIPURKKI = "rtsp://susipurkki:";
     public static String stream1;
     public static String stream2;
@@ -472,7 +474,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             //Thread thread = new Thread(() -> {
             Uri uri = null;
             try {
-                uri = getAndSaveImage();
+                uri = getAndSaveImage(detected_id);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -518,7 +520,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             });
         }
         usbMode.setOnClickListener(v -> {
-            String urli = "https://toor.hopto.org/api/v1/control/" + srnumero + "/activate_usb/true";
+            String urli = CONTROL_URL_BASE + srnumero + "/activate_usb/true";
             AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
             builder.setCancelable(true);
             builder.setTitle("Varmistus");
@@ -571,7 +573,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                 }
                 Toast.makeText(MapsActivity.this, "Nauhoitetaan ääntä",
-                        Toast.LENGTH_LONG).show();
+                        Toast.LENGTH_SHORT).show();
                 sendSound.setImageResource(R.drawable.baseline_voice_over_off_24);
                 broadcast = true;
                 try {
@@ -630,7 +632,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
         yovalo.setTooltipText(getString(R.string.yovalo_tooltip));
         yovalo.setOnClickListener(v -> {
-            String urli = CONTROL_URL_BASE + "/" + srnumero + "/night_vision/";
+            String urli = CONTROL_URL_BASE + srnumero + "/night_vision/";
             if (!nightVision) {
                 setControl(urli + "1");
                 yovalo.setImageResource(R.drawable.baseline_bedtime_24);
@@ -643,7 +645,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
         valot.setTooltipText(getString(R.string.valot_tooltip));
         valot.setOnClickListener(v -> {
-            String urli = CONTROL_URL_BASE + "/" + srnumero + "/ir_led/";
+            String urli = CONTROL_URL_BASE + srnumero + "/ir_led/";
             if (!irLeds) {
                 setControl(urli + "1");
                 valot.setImageResource(R.drawable.baseline_flashlight_on_24);
@@ -1063,7 +1065,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 HttpsURLConnection connection = (HttpsURLConnection) on.openConnection();
                 connection.setDoOutput(true);
                 connection.setRequestProperty("Authorization", "Basic " + encoded);
-                connection.setRequestProperty("x-apikey", "awidjilherg");
+                connection.setRequestProperty("x-apikey", XAPIKEY);
                 if (connection.getResponseCode() == 200) {
                     InputStream responseBody = connection.getInputStream();
                 }
@@ -1105,7 +1107,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
                 connection.setRequestMethod("POST");
                 connection.setRequestProperty("Authorization", "Basic " + encoded);
-                connection.setRequestProperty("x-apikey", "awidjilherg");
+                connection.setRequestProperty("x-apikey", XAPIKEY);
                 connection.setDoInput(true);
                 connection.setDoOutput(true);
                 connection.setUseCaches(false);
@@ -1177,12 +1179,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         return audioFilename;
     }
 
-    public Uri getAndSaveImage() throws InterruptedException {
+    public Uri getAndSaveImage(int detectionId) throws InterruptedException {
         String encoded = Base64.getEncoder().encodeToString((USERNAME_PASSWORD).getBytes(StandardCharsets.UTF_8));
         StorageManager storageManager = (StorageManager) getSystemService(STORAGE_SERVICE);
         List<StorageVolume> storageVolumes = storageManager.getStorageVolumes();
         storageVolume = storageVolumes.get(0);
-
         String dir = "";
         String filename = "detection" + new SimpleDateFormat("yyyyddMMHHmm").format(new Date()) + ".png";
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
@@ -1203,11 +1204,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         Thread thread = new Thread(() -> {
             Bitmap bitmap;
             try {
-                URL on = new URL(URL_BASE + "/detector/download/" + srnumero + "/" + detected_id);
+                URL on = new URL(URL_BASE + "/detector/download/" + srnumero + "/" + detectionId);
                 //URL on = new URL(URL_BASE + "/detector/download/8ef63c6a/496");
                 HttpsURLConnection connection = (HttpsURLConnection) on.openConnection();
                 connection.setRequestProperty("Authorization", "Basic " + encoded);
-                connection.setRequestProperty("x-apikey", "awidjilherg");
+                connection.setRequestProperty("x-apikey", XAPIKEY);
                 if (connection.getResponseCode() == 200) {
                     InputStream responseBody = null;
                     try {
@@ -1524,7 +1525,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void massamuisti() {
-        String urli = "https://toor.hopto.org/api/v1/control/" + srnumero + "/activate_usb/true";
+        String urli = CONTROL_URL_BASE + srnumero + "/activate_usb/true";
         AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
         builder.setCancelable(true);
         builder.setTitle("Varmistus");
@@ -1555,7 +1556,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void tunnistusPaalle() {
-        String urli = "https://toor.hopto.org/api/v1/detector/control/" + srnumero + "/front/true?interval=5&sound_volume=0";
+        String urli = DETECTOR_CONTORL_URL_BASE + srnumero + "/front/true?interval=5&sound_volume=1";
         Toast.makeText(MapsActivity.this,
                 "Hahmontunnistus päällä",
                 Toast.LENGTH_SHORT).show();
@@ -1563,7 +1564,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void tunnistusPois() {
-        String urli = "https://toor.hopto.org/api/v1/detector/control/" + srnumero + "/front/false?interval=5&sound_volume=1";
+        String urli = DETECTOR_CONTORL_URL_BASE + srnumero + "/front/false?interval=5&sound_volume=1";
         Toast.makeText(MapsActivity.this,
                 "Hahmontunnitus pois päältä",
                 Toast.LENGTH_SHORT).show();
