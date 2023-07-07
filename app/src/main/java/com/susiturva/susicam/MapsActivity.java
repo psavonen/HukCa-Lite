@@ -53,6 +53,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.android.exoplayer2.DefaultLoadControl;
@@ -397,8 +398,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         } catch (Exception e) {
             e.printStackTrace();
         }
+        showLogoWhenNoStream();
         btnSwitch.setOnClickListener(v -> {
-            if (diagonalInches <= SCREEN_SIZE_THRESHOLD) {
+            player.setPlayWhenReady(true);
+            player2.setPlayWhenReady(true);
+            btnSwitch.setBackground(null);
+           showLogoWhenNoStream();
+           if (diagonalInches <= SCREEN_SIZE_THRESHOLD) {
                 if (!switcher) {
                     playerView.setVisibility(View.INVISIBLE);
                     playerView2.setVisibility(View.VISIBLE);
@@ -822,10 +828,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         videoCheck = false;
                         if (!exoplayerPlaying(player)) {
                             exoplayerTwoStreams();
+                            showLogoWhenNoStream();
                         }
                     }
                 } else {
                     videoCheck = true;
+                    showLogoWhenNoStream();
                 }
                 koiraNopeus.setText(speed.toString());
                 if (checkGPSandNetwork()) {
@@ -973,7 +981,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         player.addMediaItem(firstStream);
         // Prepare the player.
         player.prepare();
-        player.play();
+        player.setPlayWhenReady(true);
         player2 = new ExoPlayer.Builder(this)
                 .setTrackSelector(trackSelector)
                 .setBandwidthMeter(defaultBandwidthMeter)
@@ -987,7 +995,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // Prepare the player.
         player2.prepare();
-        player2.play();
+        player2.setPlayWhenReady(true);
         playerView.setVisibility(View.VISIBLE);
         playerView2.setVisibility(View.INVISIBLE);
         if (diagonalInches > SCREEN_SIZE_THRESHOLD) {
@@ -1313,10 +1321,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onPlayerError(PlaybackException error) {
                 Player.Listener.super.onPlayerError(error);
+               showLogoWhenNoStream();
                 Toast.makeText(MapsActivity.this,
                         "Ei video yhteyttä.",
                         Toast.LENGTH_LONG).show();
-                new Handler().postDelayed(() ->
+               new Handler().postDelayed(() ->
                                 player.setPlayWhenReady(true),
                         10000);
                 }
@@ -1548,7 +1557,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private boolean exoplayerPlaying(ExoPlayer exoPlayer) {
-        if (exoPlayer.getPlaybackState() == Player.STATE_READY) {
+        if (exoPlayer.getPlaybackState() == Player.STATE_READY || exoPlayer.getPlaybackState() == Player.STATE_BUFFERING) {
             return true;
         } else {
             return false;
@@ -1661,7 +1670,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         return proj.fromScreenLocation(p);
     }
-
+    private void showLogoWhenNoStream(){
+        try {
+            if (!exoplayerPlaying(player)) {
+                btnSwitch.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.hucka_green, null));
+            } else {
+                btnSwitch.setBackground(null);
+                btnSwitch.setBackgroundColor(Color.TRANSPARENT);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
 
 
