@@ -400,8 +400,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         showLogoWhenNoStream();
         btnSwitch.setOnClickListener(v -> {
-            player.setPlayWhenReady(true);
-            player2.setPlayWhenReady(true);
+            if (!exoplayerPlaying(player)) {
+                exoplayerTwoStreams();
+            }
             btnSwitch.setBackground(null);
            showLogoWhenNoStream();
            if (diagonalInches <= SCREEN_SIZE_THRESHOLD) {
@@ -828,8 +829,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         videoCheck = false;
                         if (!exoplayerPlaying(player)) {
                             exoplayerTwoStreams();
-                            showLogoWhenNoStream();
                         }
+                        showLogoWhenNoStream();
                     }
                 } else {
                     videoCheck = true;

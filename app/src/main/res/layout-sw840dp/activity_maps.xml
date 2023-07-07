@@ -42,7 +42,7 @@
         tools:layout_editor_absoluteX="0dp"
         tools:layout_editor_absoluteY="0dp" />
 
-    <Button
+    <ImageButton
         android:id="@+id/connect"
         android:layout_width="0dp"
         android:layout_height="match_parent"
