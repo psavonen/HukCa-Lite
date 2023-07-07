@@ -44,5 +44,19 @@
         android:text="Maanmittauslaitos"
         android:textAlignment="center"
         android:textSize="18dp" />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:textColor="#af6946"
+        android:text="- peruskarttarasteri "
+        android:textAlignment="center"
+        android:textSize="18dp" />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:textColor="#af6946"
+        android:text="- 28.06.2023	 "
+        android:textAlignment="center"
+        android:textSize="18dp" />
 
 </LinearLayout>

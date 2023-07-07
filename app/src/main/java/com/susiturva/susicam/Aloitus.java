@@ -47,7 +47,7 @@ public class Aloitus extends Activity {
                     startActivity(intent);
                 }
             }
-        }, 1000);
+        }, 3000);
         ImageView imageView = findViewById(R.id.connect);
         imageView.setOnTouchListener(new View.OnTouchListener() {
             @Override
