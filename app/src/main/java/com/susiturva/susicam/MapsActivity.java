@@ -505,11 +505,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         keskitaPuhelimeen.setTooltipText(getString(R.string.puhelin_tooltip));
         keskitaPuhelimeen.setOnClickListener(v -> {
             try {
-                new Handler().postDelayed(() -> {
-                    new Handler().postDelayed(() ->
-                            mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng)), 100);
-                    mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
-                }, 100);
+                if (latLng != null) {
+                    new Handler().postDelayed(() -> {
+                        new Handler().postDelayed(() ->
+                                mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng)), 100);
+                        mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
+                    }, 100);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
