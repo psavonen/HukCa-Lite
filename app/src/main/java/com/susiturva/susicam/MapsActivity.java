@@ -489,11 +489,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         keskitaPuhelimeen.setTooltipText(getString(R.string.puhelin_tooltip));
         keskitaPuhelimeen.setOnClickListener(v -> {
-            new Handler().postDelayed(() -> {
-                new Handler().postDelayed(() ->
-                        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng)), 100);
-                mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
-            }, 100);
+            try {
+                new Handler().postDelayed(() -> {
+                    new Handler().postDelayed(() ->
+                            mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng)), 100);
+                    mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
+                }, 100);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         });
 
         if (diagonalInches <= SCREEN_SIZE_THRESHOLD) {
@@ -683,6 +687,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             playerView2.setVisibility(View.VISIBLE);
             playerView.setVisibility(View.VISIBLE);
             btnSwitch.setVisibility(View.VISIBLE);
+            fullscreenBack.setVisibility(View.INVISIBLE);
             fullscreenBackSwitch = false;
         });
 
@@ -755,10 +760,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if (firstTime) {
                     new Handler().postDelayed(() -> {
                         new Handler().postDelayed(() ->
-                                mMap.moveCamera(CameraUpdateFactory.newLatLng(latLong)), 500);
+                                mMap.moveCamera(CameraUpdateFactory.newLatLng(latLong)), 100);
                         mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
                         firstTime = false;
-                    }, 500);
+                    }, 100);
                 }
                 if (marker != null) {
                     marker.remove();
@@ -1264,7 +1269,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 puhelin.setTag(new Float(0.0));*/
                 MarkerOptions options = new MarkerOptions();
                 options.position(getCoords(latLng));
-                options.icon(BitmapDescriptorFactory.fromBitmap(getBitmap(latLng)));
+                options.icon(BitmapDescriptorFactory.fromBitmap(getBitmap(latLng))).title("100m");
+                options.zIndex(1000);
                 if (pmarker != null) {
                     pmarker.remove();
                 }
