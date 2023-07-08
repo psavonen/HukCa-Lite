@@ -33,6 +33,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
+import android.provider.MediaStore;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.view.Menu;
@@ -1223,7 +1224,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         File file = null;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-            file = new File(storageVolume.getDirectory() + "/Pictures/HukCa");
+            file = new File(storageVolume.getDirectory() + "/Pictures/HukCa/");
         }
         if (!file.exists()) {
             file.mkdirs();
@@ -1257,10 +1258,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
         thread.start();
         thread.join();
+        String[] mimes = new String[1];
+        mimes[0] = "image/png";
         try {
             MediaScannerConnection.scanFile(this,
                     new String[]{urlz.toString()},
-                    null, null);
+                    mimes, null);
+            MediaStore.Images.Media.insertImage(this.getContentResolver(),
+                    file.getAbsolutePath(), file.getName(), null);
+            this.sendBroadcast(new Intent(
+            Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file)));
         } catch (Exception e) {
             e.printStackTrace();
         }

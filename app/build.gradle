@@ -10,8 +10,8 @@ android {
         applicationId "com.susiturva.susicam"
         minSdk 26
         targetSdk 33
-        versionCode 29
-        versionName "1.99.10"
+        versionCode 30
+        versionName "1.99.11"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
