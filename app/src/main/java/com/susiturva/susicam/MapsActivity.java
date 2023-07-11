@@ -1349,12 +1349,23 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onPlayerError(PlaybackException error) {
                 Player.Listener.super.onPlayerError(error);
                showLogoWhenNoStream();
-                Toast.makeText(MapsActivity.this,
-                        "Ei video yhteyttä.",
-                        Toast.LENGTH_LONG).show();
-               new Handler().postDelayed(() ->
-                                player.setPlayWhenReady(true),
-                        10000);
+                try {
+                    if (powerService()) {
+                        Toast.makeText(MapsActivity.this,
+                                "Ei video yhteyttä.",
+                                Toast.LENGTH_SHORT).show();
+                        new Handler().postDelayed(() ->
+                                        player.setPlayWhenReady(true),
+                                10000);
+                    }
+                    else {
+                        Toast.makeText(MapsActivity.this,
+                                "Ei yhteyttä laitteeseen",
+                                Toast.LENGTH_LONG).show();
+                    }
+                } catch (ParseException e) {
+                    throw new RuntimeException(e);
+                }
                 }
         });
         player2.addListener(new Player.Listener() {

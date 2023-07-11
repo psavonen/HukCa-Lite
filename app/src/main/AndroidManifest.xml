@@ -63,7 +63,7 @@
             android:exported="true"
             android:label="@string/app_name"
             android:screenOrientation="landscape"
-            tools:ignore="LockedOrientationActivity"></activity>
+            tools:ignore="LockedOrientationActivity"/>
     </application>
 
 </manifest>

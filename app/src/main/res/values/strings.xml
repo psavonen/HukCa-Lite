@@ -12,5 +12,8 @@
     <string name="title_activity_maps">MapsActivity</string>
     <string name="google_maps_key">AIzaSyCkcVae2K_DJxU6D6XIiJznEmvqbQBc7mI</string>
     <string name="puhelin_tooltip">Keskitä GPS päätelaitteeseen</string>
+    <string name="puhelin">puhelin</string>
+    <string name="menu">Menu</string>
+    <string name="koira">Koira</string>
 
 </resources>
