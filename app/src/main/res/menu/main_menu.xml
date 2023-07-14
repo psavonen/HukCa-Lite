@@ -6,6 +6,8 @@
         android:title="Hahmontunnistuksen kytkentä"/>
     <item android:id="@+id/massamuisti"
         android:title="Aseta laite massamuistitilaan"/>
+    <item android:id="@+id/kirjauduulos"
+        android:title="Kirjaudu ulos Googlesta"/>
     <item android:id="@+id/sarjanumero"
         android:title="Aseta sarjanumero"/>
     <item android:id="@+id/SN"

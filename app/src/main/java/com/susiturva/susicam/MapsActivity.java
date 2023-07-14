@@ -68,9 +68,14 @@ import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.ui.StyledPlayerView;
 import com.google.android.exoplayer2.upstream.DefaultAllocator;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
+import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -259,6 +264,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private AppUpdateManager appUpdateManager;
     private InstallStateUpdatedListener installStateUpdatedListener;
     private GoogleSignInAccount account;
+    private GoogleApiClient mGoogleApiClient;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -292,7 +298,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             case R.id.massamuisti:
                 massamuisti();
                 return true;
-
+            case R.id.kirjauduulos:
+                Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(
+                        new ResultCallback<Status>() {
+                            @Override
+                            public void onResult(Status status) {
+                                // ...
+                                Toast.makeText(getApplicationContext(), "Kirjauduttu ulos", Toast.LENGTH_SHORT).show();
+                                Intent i = new Intent(getApplicationContext(), MapsActivity.class);
+                                startActivity(i);
+                            }
+                        });
+                return true;
 
             default:
                 return super.onOptionsItemSelected(item);
@@ -336,9 +353,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-       GoogleSignInAccount acct = GoogleSignIn.getLastSignedInAccount(this);
-        if (acct == null) {
+        account = GoogleSignIn.getLastSignedInAccount(this);
+        if (account == null) {
             Toast.makeText(getApplicationContext(), "Kirjaudu Google tilille", Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(MapsActivity.this, Therion.class);
+            startActivity(intent);
         }
         appUpdateManager = AppUpdateManagerFactory.create(getApplicationContext());
         checkUpdate();
@@ -1812,7 +1831,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             appUpdateManager.unregisterListener(installStateUpdatedListener);
         }
     }
-
+    @Override
+    protected void onStart() {
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
+                .build();
+        mGoogleApiClient.connect();
+        super.onStart();
+    }
 }
 
 

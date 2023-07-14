@@ -148,13 +148,14 @@ public class Therion extends Activity {
             if(result.isSuccess())
             {
                 /*Successfully logged in */
-                GoogleSignInAccount account=result.getSignInAccount();
-                Toast.makeText(this,"Login success:"+account.getDisplayName(),Toast.LENGTH_LONG).show();
+                GoogleSignInAccount account = result.getSignInAccount();
+                Toast.makeText(this,"Kirjautuminen onnistui: "+account.getDisplayName(),Toast.LENGTH_LONG).show();
+                updateUI(account);
             }
             else
             {
                 /*Failed to log in*/
-                Toast.makeText(this,"Login failure",Toast.LENGTH_LONG).show();
+                Toast.makeText(this,"Kirjautuminen epäonnistui.",Toast.LENGTH_LONG).show();
             }
         }
     }
