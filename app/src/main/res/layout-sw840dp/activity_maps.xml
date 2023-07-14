@@ -162,6 +162,7 @@
         />
     <ImageButton
         android:id="@+id/aani"
+        android:alpha="@string/opacity"
         android:layout_width="80dp"
         android:layout_below="@id/battery"
         android:layout_height="wrap_content"
@@ -174,6 +175,7 @@
         />
     <ImageButton
         android:id="@+id/lahetys"
+        android:alpha="@string/opacity"
         android:layout_width="80dp"
         android:layout_below="@id/battery"
         android:layout_height="wrap_content"
@@ -187,6 +189,7 @@
 
     <ImageButton
         android:id="@+id/led"
+        android:alpha="@string/opacity"
         android:layout_below="@id/battery"
         android:layout_marginTop="5dp"
         android:layout_toStartOf="@id/toiminnot"
@@ -200,6 +203,7 @@
 
     <ImageButton
         android:id="@+id/yovalo"
+        android:alpha="@string/opacity"
         android:layout_toStartOf="@id/led"
         android:layout_below="@id/battery"
         android:layout_marginTop="5dp"
@@ -212,6 +216,7 @@
         />
     <Button
         android:id="@+id/keskitaKoiraan"
+        android:alpha="@string/opacity"
         android:layout_below="@id/led"
         android:layout_marginTop="5dp"
         android:layout_marginEnd="2dp"
@@ -225,6 +230,7 @@
         />
     <Button
         android:id="@+id/keskitaPuhelimeen"
+        android:alpha="@string/opacity"
         android:layout_below="@id/led"
         android:layout_marginTop="5dp"
         android:layout_marginEnd="2dp"
@@ -238,6 +244,7 @@
         />
     <ImageButton
         android:id="@+id/zoom"
+        android:alpha="@string/opacity"
         android:layout_width="80dp"
         android:layout_marginTop="5dp"
         android:layout_below="@id/led"
@@ -251,6 +258,7 @@
         android:contentDescription="TODO" />
     <Button
         android:id="@+id/menu"
+        android:alpha="@string/opacity"
         android:layout_below="@id/led"
         android:layout_marginTop="5dp"
         android:layout_toStartOf="@id/keskitaKoiraan"
@@ -264,6 +272,7 @@
         />
     <ImageButton
         android:id="@+id/sendSound"
+        android:alpha="@string/opacity"
         android:layout_width="80dp"
         android:layout_marginTop="5dp"
         android:layout_below="@id/battery"
@@ -278,6 +287,7 @@
     <ImageButton
         android:id="@+id/recordVideo"
         android:layout_width="80dp"
+        android:alpha="@string/opacity"
         android:layout_marginTop="5dp"
         android:layout_marginEnd="2dp"
         android:layout_below="@id/led"
@@ -290,6 +300,7 @@
         />
     <ImageButton
         android:id="@+id/usbMode"
+        android:alpha="@string/opacity"
         android:layout_width="80dp"
         android:layout_marginTop="5dp"
         android:layout_below="@id/led"

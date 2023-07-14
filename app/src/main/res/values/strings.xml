@@ -15,5 +15,5 @@
     <string name="puhelin">puhelin</string>
     <string name="menu">Menu</string>
     <string name="koira">Koira</string>
-
+    <string name="opacity">0.8</string>
 </resources>
