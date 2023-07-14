@@ -12,14 +12,19 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
+import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.susiturva.susicam.MapsActivity;
+import com.google.android.gms.auth.api.signin.GoogleSignInResult;
+import com.google.android.gms.common.SignInButton;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.GoogleApi;
+import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.util.List;
 
@@ -31,6 +36,10 @@ public class Therion extends Activity {
     private int My_PERMISSION_REQUEST_FINE_LOCATION = 0;
     private int My_PERMISSION_REQUEST_WRITE_ACCESS = 0;
     private GoogleSignInClient mGoogleSignInClient;
+    private GoogleSignInAccount account;
+    private GoogleSignInOptions gso;
+    private GoogleApiClient mGoogleApi;
+
     public static final int MY_PERMISSIONS_STO = 0;
     private static final int RC_SIGN_IN = 9001;
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +47,8 @@ public class Therion extends Activity {
         setContentView(R.layout.activity_therion);
         db = new DatabaseHelper(this);
         sarjanumeroInput = findViewById(R.id.sarjanumero);
+        SignInButton signInButton = findViewById(R.id.sign_in_button);
+        signInButton.setSize(SignInButton.SIZE_STANDARD);
         tallenna = findViewById(R.id.tallenna);
         int PERMISSION_ALL = 1;
         String[] PERMISSIONS = {
@@ -58,14 +69,24 @@ public class Therion extends Activity {
             srnumero = String.valueOf(sarjanumero.getSarjanumero());
         }
         sarjanumeroInput.setText(srnumero);
-        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestEmail()
+            .build();
+        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+        mGoogleApi = new GoogleApiClient.Builder(this)
+                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
+                        .build();
+        account = GoogleSignIn.getLastSignedInAccount(this);
         if (account == null) {
-            GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                    .requestEmail()
-                    .build();
-            mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
             signIn();
         }
+        findViewById(R.id.sign_in_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent=Auth.GoogleSignInApi.getSignInIntent(mGoogleApi);
+                startActivityForResult(intent,RC_SIGN_IN);
+            }
+        });
         tallenna.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -85,9 +106,14 @@ public class Therion extends Activity {
 
 
                 Intent intent = new Intent(Therion.this, MapsActivity.class);
-                startActivity(intent);
+                account = GoogleSignIn.getLastSignedInAccount(Therion.this);
+                if (account != null) {
+                    startActivity(intent);
+                }
+                else {
+                    Toast.makeText(Therion.this, "Kirjaudu Google tilille.",Toast.LENGTH_LONG).show();
 
-
+                }
             }
 
         });//Nappi loppuu
@@ -105,8 +131,47 @@ public class Therion extends Activity {
     private void signIn() {
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);
+   }
+    @Override
+    public void onStart() {
+        super.onStart();
+       /* GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        updateUI(account);*/
     }
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
 
+        if (requestCode == RC_SIGN_IN) {
+            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+            String pylly = result.toString();
+            if(result.isSuccess())
+            {
+                /*Successfully logged in */
+                GoogleSignInAccount account=result.getSignInAccount();
+                Toast.makeText(this,"Login success:"+account.getDisplayName(),Toast.LENGTH_LONG).show();
+            }
+            else
+            {
+                /*Failed to log in*/
+                Toast.makeText(this,"Login failure",Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+    // [END onActivityResult]
 
+    // [START handleSignInResult]
+    private void handleSignInResult(GoogleSignInResult completedTask) {
+        GoogleSignInAccount account = completedTask.getSignInAccount();
+        updateUI(account);
+
+    }
+    private void updateUI(@Nullable GoogleSignInAccount account) {
+        if (account != null) {
+            findViewById(R.id.sign_in_button).setVisibility(View.GONE);
+        } else {
+            findViewById(R.id.sign_in_button).setVisibility(View.VISIBLE);
+        }
+    }
 
 }
