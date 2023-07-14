@@ -13,6 +13,9 @@ import android.widget.ImageView;
 
 import androidx.core.app.ActivityCompat;
 
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,11 +36,12 @@ public class Aloitus extends Activity {
 
 
         }
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
         new Handler().postDelayed(new Runnable() {
             @Override
 
             public void run() {
-                if(srnumero == null) {
+                if(srnumero == null || account == null) {
                     Intent intent = new Intent(Aloitus.this, Therion.class);
                     startActivity(intent);
 

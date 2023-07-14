@@ -15,6 +15,10 @@ import android.widget.Toast;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.susiturva.susicam.MapsActivity;
 
 import java.util.List;
@@ -26,7 +30,9 @@ public class Therion extends Activity {
     public EditText sarjanumeroInput;
     private int My_PERMISSION_REQUEST_FINE_LOCATION = 0;
     private int My_PERMISSION_REQUEST_WRITE_ACCESS = 0;
+    private GoogleSignInClient mGoogleSignInClient;
     public static final int MY_PERMISSIONS_STO = 0;
+    private static final int RC_SIGN_IN = 9001;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_therion);
@@ -52,6 +58,14 @@ public class Therion extends Activity {
             srnumero = String.valueOf(sarjanumero.getSarjanumero());
         }
         sarjanumeroInput.setText(srnumero);
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        if (account == null) {
+            GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                    .requestEmail()
+                    .build();
+            mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+            signIn();
+        }
         tallenna.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -88,7 +102,10 @@ public class Therion extends Activity {
         }
         return true;
     }
-
+    private void signIn() {
+        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+        startActivityForResult(signInIntent, RC_SIGN_IN);
+    }
 
 
 

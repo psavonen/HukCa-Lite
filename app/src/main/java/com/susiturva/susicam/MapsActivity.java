@@ -938,7 +938,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .setTargetBufferBytes(200 * 64 * 1024)
                 .setPrioritizeTimeOverSizeThresholds(false)
                 .setBackBuffer(2000, false)
-                .createDefaultLoadControl();
+                .build();
 
         final long defaultMaxInitialBitrate = Integer.MAX_VALUE;
 
@@ -978,7 +978,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .setTargetBufferBytes(200 * 64 * 1024)
                 .setPrioritizeTimeOverSizeThresholds(false)
                 .setBackBuffer(1000, false)
-                .createDefaultLoadControl();
+                .build();
 
         final long defaultMaxInitialBitrate = Integer.MAX_VALUE;
 
@@ -1041,7 +1041,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .setTargetBufferBytes(200 * 64 * 1024)
                 .setPrioritizeTimeOverSizeThresholds(false)
                 .setBackBuffer(2000, false)
-                .createDefaultLoadControl();
+                .build();
 
         final long defaultMaxInitialBitrate = Integer.MAX_VALUE;
 
