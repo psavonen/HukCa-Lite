@@ -1342,7 +1342,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 puhelin.setTag(new Float(0.0));*/
                 MarkerOptions options = new MarkerOptions();
                 options.position(getCoords(latLng));
-                options.icon(BitmapDescriptorFactory.fromBitmap(getBitmap(latLng))).title("100m");
+                try {
+                    options.icon(BitmapDescriptorFactory.fromBitmap(getBitmap(latLng))).title("100m");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 options.zIndex(1000);
                 if (pmarker != null) {
                     pmarker.remove();
@@ -1475,8 +1479,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         Date dateNow = new Date();
         float sinceMidnight = dateNow.getTime();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Date date = sdf.parse(last_update);
-        float millis = date.getTime();
+        Date date = null;
+        float millis = 0;
+        try {
+            date = sdf.parse(last_update);
+            millis = date.getTime();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
         try {
             //MapsActivity.onOff.setText("OFF | ");
             float erotus = sinceMidnight - millis;
