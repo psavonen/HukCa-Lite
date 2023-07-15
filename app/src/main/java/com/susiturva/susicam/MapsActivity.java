@@ -836,6 +836,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         Intent serviceIntent = new Intent(this, LocationService.class);
         serviceIntent.putExtra("inputExtra", "HukCa taustapalvelu");
         ContextCompat.startForegroundService(this, serviceIntent);
+        startForegroundService(serviceIntent);
     }
 
     public void stopService() {
