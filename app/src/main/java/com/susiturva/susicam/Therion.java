@@ -1,11 +1,19 @@
 package com.susiturva.susicam;
 
 import android.Manifest;
+import android.accounts.AccountManager;
+import android.accounts.AccountManagerCallback;
+import android.accounts.AccountManagerFuture;
+import android.accounts.AuthenticatorException;
+import android.accounts.OperationCanceledException;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.FileUtils;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -21,12 +29,40 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
+import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApi;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.Scope;
+import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.common.collect.ImmutableSet;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Therion extends Activity {
     TextView sarjanumero;
@@ -42,6 +78,13 @@ public class Therion extends Activity {
 
     public static final int MY_PERMISSIONS_STO = 0;
     private static final int RC_SIGN_IN = 9001;
+    private static final int RC_GET_AUTH_CODE = 9003;
+    private static final String CLIENT_ID ="501679495514-8ejmkgppqbq8cp28nn9kcb1njs74rurj.apps.googleusercontent.com";
+    private static final String CLIENT_SECRET ="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";
+    private static final String REDIRECT_URI ="https://toor.hopto.org";
+
+    private static final String ID_CODE = "4/0AZEOvhVe6N_UqR_bOrYerd9gcaSH1XqQNPvnMWQ4o98NtypE0BiXCDyIxjm2EocLFJO84Q";
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_therion);
@@ -62,24 +105,35 @@ public class Therion extends Activity {
             String[] requiredPermissions = { Manifest.permission.READ_EXTERNAL_STORAGE };
             ActivityCompat.requestPermissions(this, requiredPermissions, 0);
         }
-
         List<MyDBHandler> srnumerot = db.getAllSarjanumerot();
         String srnumero = "";
         for(final MyDBHandler sarjanumero : srnumerot) {
             srnumero = String.valueOf(sarjanumero.getSarjanumero());
         }
         sarjanumeroInput.setText(srnumero);
+
+        validateServerClientID();
+        String serverClientId = getString(R.string.server_client_id);
         gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestEmail()
-            .build();
+                .requestIdToken(serverClientId)
+                .requestScopes(new Scope(Scopes.DRIVE_APPFOLDER))
+                .requestScopes(new Scope(Scopes.EMAIL))
+                .requestScopes(new Scope(Scopes.PROFILE))
+                .requestServerAuthCode(serverClientId)
+                .requestId()
+                .requestEmail()
+                .build();
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
-        mGoogleApi = new GoogleApiClient.Builder(this)
+        gso.getServerClientId();
+        mGoogleApi =new GoogleApiClient.Builder(this)
                 .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
                         .build();
         account = GoogleSignIn.getLastSignedInAccount(this);
         if (account == null) {
+
             signIn();
         }
+
         findViewById(R.id.sign_in_button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -131,12 +185,13 @@ public class Therion extends Activity {
     private void signIn() {
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);
+
    }
     @Override
     public void onStart() {
         super.onStart();
-       /* GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
-        updateUI(account);*/
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        updateUI(account);
     }
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -144,17 +199,17 @@ public class Therion extends Activity {
 
         if (requestCode == RC_SIGN_IN) {
             GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
-            String pylly = result.toString();
             if(result.isSuccess())
             {
-                /*Successfully logged in */
                 GoogleSignInAccount account = result.getSignInAccount();
-                Toast.makeText(this,"Kirjautuminen onnistui: "+account.getDisplayName(),Toast.LENGTH_LONG).show();
+                Toast.makeText(this,"Kirjautuminen onnistui: " + account.getDisplayName(),Toast.LENGTH_LONG).show();
+                String toukka = account.getIdToken();
+                String toukka2 = account.getServerAuthCode();
+
                 updateUI(account);
             }
             else
             {
-                /*Failed to log in*/
                 Toast.makeText(this,"Kirjautuminen epäonnistui.",Toast.LENGTH_LONG).show();
             }
         }
@@ -172,6 +227,14 @@ public class Therion extends Activity {
             findViewById(R.id.sign_in_button).setVisibility(View.GONE);
         } else {
             findViewById(R.id.sign_in_button).setVisibility(View.VISIBLE);
+        }
+    }
+    private void validateServerClientID() {
+        String serverClientId = getString(R.string.server_client_id);
+        String suffix = ".apps.googleusercontent.com";
+        if (!serverClientId.trim().endsWith(suffix)) {
+            String message = "Invalid server client ID in strings.xml, must end with " + suffix;
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
         }
     }
 

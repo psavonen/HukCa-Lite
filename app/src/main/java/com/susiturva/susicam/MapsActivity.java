@@ -1,6 +1,7 @@
 package com.susiturva.susicam;
 
 import android.Manifest;
+import android.accounts.Account;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -37,6 +38,7 @@ import android.os.storage.StorageVolume;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
+import android.util.JsonReader;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -104,7 +106,11 @@ import com.google.android.play.core.install.model.AppUpdateType;
 import com.google.android.play.core.install.model.InstallStatus;
 import com.google.android.play.core.install.model.UpdateAvailability;
 import com.google.android.play.core.tasks.Task;
+import com.google.gson.JsonArray;
 import com.susiturva.susicam.service.LocationService;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -178,6 +184,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private int detected_id;
     private int detected_ago;
     private int ir_active;
+    private int recording_active;
     private int My_PERMISSION_REQUEST_FINE_LOCATION = 0;
     private int My_PERMISSION_REQUEST_WRITE_ACCESS = 0;
     private final int SCREEN_WIDTH_THRESHOLD = 1080;
@@ -454,7 +461,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         showLogoWhenNoStream();
         btnSwitch.setOnClickListener(v -> {
             if (!exoplayerPlaying(player)) {
-                exoplayerTwoStreams();
+                try {
+                    exoplayerTwoStreams();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
             btnSwitch.setBackground(null);
            showLogoWhenNoStream();
@@ -801,13 +812,19 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             startService();
         }
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter("LocationUpdates"));
-        LocalBroadcastManager.getInstance(this).registerReceiver(aMessageReceiver, new IntentFilter("Streams"));
+        //LocalBroadcastManager.getInstance(this).registerReceiver(aMessageReceiver, new IntentFilter("Streams"));
         LocalBroadcastManager.getInstance(this).registerReceiver(bMessageReceiver, new IntentFilter("Route"));
-        LocalBroadcastManager.getInstance(this).registerReceiver(cMessageReceiver, new IntentFilter("RecordingStatus"));
+        //LocalBroadcastManager.getInstance(this).registerReceiver(cMessageReceiver, new IntentFilter("RecordingStatus"));
         firstTime = true;
         try {
             new Handler().postDelayed(() ->
-                            exoplayerTwoStreams(),
+                    {
+                        try {
+                            exoplayerTwoStreams();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    },
                     4000);
         } catch (Exception e) {
             e.printStackTrace();
@@ -837,6 +854,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         serviceIntent.putExtra("inputExtra", "HukCa taustapalvelu");
         ContextCompat.startForegroundService(this, serviceIntent);
         startForegroundService(serviceIntent);
+
     }
 
     public void stopService() {
@@ -877,6 +895,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             last_update = b.getString("Last_update");
             camera_mode = b.getInt("Camera_mode");
             ir_active = b.getInt("Ir_active");
+            recordingStatus = b.getInt("Recordin_activated");
+            if (recordingStatus == 0) {
+                recordVideo.setImageResource(R.drawable.record_video);
+            } else {
+                recordVideo.setImageResource(R.drawable.record_video_stop);
+            }
             try {
                 detected_id = b.getInt("Detected_ID");
             } catch (Exception e) {
@@ -1018,7 +1042,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-    private void exoplayerTwoStreams() {
+    private void exoplayerTwoStreams() throws InterruptedException {
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                getStreamers(srnumero);
+            }
+        };
+        Thread thread = new Thread(runnable);
+        thread.start();
+        thread.join();
         stream1 = RTSP_SUSIPURKKI + stream_1_key + "@" + rtsp_url_stream_1;
         stream2 = RTSP_SUSIPURKKI + stream_2_key + "@" + rtsp_url_stream_2;
 
@@ -1133,9 +1166,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onDestroy() {
         super.onDestroy();
-        player.release();
+  /*      player.release();
         player2.release();
-        playerAudio.release();
+        playerAudio.release();*/
         stopService();
     }
 
@@ -1842,6 +1875,59 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .build();
         mGoogleApiClient.connect();
         super.onStart();
+    }
+    private void getStreamers(String serialHash) {
+        URL endpoint = null;
+
+        try {
+            endpoint = new URL("https://toor.hopto.org/api/v1/config/" + serialHash);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        URL finalEndpoint = endpoint;
+
+        HttpsURLConnection myConnection =
+                null;
+        try {
+            assert finalEndpoint != null;
+            myConnection = (HttpsURLConnection) finalEndpoint.openConnection();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        String encoded = Base64.getEncoder().encodeToString(USERNAME_PASSWORD.getBytes(StandardCharsets.UTF_8));
+        myConnection.setRequestProperty("Authorization", "Basic " + encoded);
+        myConnection.setRequestProperty("x-apikey", XAPIKEY);
+
+        try {
+            if (myConnection.getResponseCode() == 200){
+                InputStream responseBody = myConnection.getInputStream();
+                BufferedReader bR = new BufferedReader(  new InputStreamReader(responseBody));
+                String line = "";
+
+                StringBuilder responseStrBuilder = new StringBuilder();
+                while((line =  bR.readLine()) != null){
+
+                    responseStrBuilder.append(line);
+                }
+                responseBody.close();
+
+                JSONObject result= new JSONObject(responseStrBuilder.toString());
+                rtsp_url_stream_1 = result.getString("rtsp_url_stream_1");
+                rtsp_url_stream_2 = result.getString("rtsp_url_stream_2");
+                rtsp_url_audio = result.getString("rtsp_url_audio");
+                stream_1_key = result.getString("stream_1_key");
+                stream_2_key = result.getString("stream_2_key");
+                audio_key = result.getString("audio_key");
+            }
+            else{
+                myConnection.disconnect();
+            }
+            myConnection.disconnect();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
 

@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -59,6 +60,7 @@ public class LocationService extends Service {
     public String last_update;
     public int active_video;
     public int active_audio;
+    public int active_recording;
     public int camera_mode;
     public int ir_active;
     public int front_video_activated;
@@ -74,6 +76,7 @@ public class LocationService extends Service {
     private Timer timer;
     private TimerTask timerTask;
     private Handler handler = new Handler();
+    private Notification notification;
 
     private Thread locationThread, streamersThread1, thread2, thread3;
 
@@ -84,7 +87,7 @@ public class LocationService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         db = new DatabaseHelper(this);
         sarjanumerot.addAll(db.getAllSarjanumerot());
-        for(MyDBHandler sarjanumero : sarjanumerot) {
+        for (MyDBHandler sarjanumero : sarjanumerot) {
             srnumero = String.valueOf(sarjanumero.getSarjanumero());
         }
         String serial_hash = srnumero;
@@ -97,22 +100,18 @@ public class LocationService extends Service {
             e.printStackTrace();
         }
         createNotificationChannel();
-        Intent notificationIntent = new Intent(this, MapsActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this,
-                0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("HucKa palvelu")
-                .setContentText(input)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentIntent(pendingIntent)
-                .build();
-        startForeground(1, notification);
+
+        //startForegroundService(intent);
+
+        //startForeground(1, notification);
+
 
         Runnable runnable = () -> {
-            while(runner) {
+            while (runner) {
                 try {
                     location(serial_hash);
-                    }catch(Exception e){}
+                } catch (Exception e) {
+                }
 
                 try {
                     Thread.sleep(2000);
@@ -126,30 +125,13 @@ public class LocationService extends Service {
         locationThread = new Thread(runnable);
         locationThread.start();
 
-        Runnable streamersRunnable = () -> {
-            while(runner) {
-                try {
-                    streamers(serial_hash);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        streamersThread1 = new Thread(streamersRunnable);
-        streamersThread1.start();
-
         Runnable runnable1 = () -> {
-
-            while(runner) {
+            while (runner) {
                 try {
                     route(serial_hash);
 
-                } catch(Exception e){}
+                } catch (Exception e) {
+                }
                 try {
                     Thread.sleep(2000);
                 } catch (InterruptedException e) {
@@ -159,37 +141,40 @@ public class LocationService extends Service {
         };
         thread2 = new Thread(runnable1);
         thread2.start();
-        Runnable runnable2 = () -> {
-            while(runner) {
-                try {
-                    recordingStatus(serial_hash);
-                }catch(Exception e){}
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        thread3 = new Thread(runnable2);
-        thread3.start();
+
 
         return START_STICKY;
     }
+
     @Override
-    public void onCreate(){
+    public void onCreate() {
+        String input = "Off";
+        Intent notificationIntent = new Intent(this, MapsActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this,
+                0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
+        notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("HucKa palvelu")
+                .setContentText(input)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentIntent(pendingIntent)
+                .build();
+        startForegroundService(new Intent(this, LocationService.class));
+        startForeground(1,notification);
+
     }
+
     @Override
     public IBinder onBind(Intent intent) {
         // TODO: Return the communication channel to the service.
         throw new UnsupportedOperationException("Not yet implemented");
     }
+
     @Override
-    public void onDestroy(){
+    public void onDestroy() {
         runner = false;
     }
 
-    private void location(String serialHash){
+    private void location(String serialHash) {
 
         URL endpoint = null;
 
@@ -215,7 +200,7 @@ public class LocationService extends Service {
 
         try {
 
-            if (connection.getResponseCode() == 200){
+            if (connection.getResponseCode() == 200) {
                 InputStream responseBody = connection.getInputStream();
 
                 InputStreamReader responseBodyReader =
@@ -226,114 +211,116 @@ public class LocationService extends Service {
                 jsonReader.beginObject();
 
                 try {
-                    while(jsonReader.hasNext()) {
+                    while (jsonReader.hasNext()) {
                         String key = jsonReader.nextName();
                         if (key.equals("session_id")) {
                             session_id = jsonReader.nextLong();
                         }
                         String latKey = jsonReader.nextName();
-                        if(latKey.equalsIgnoreCase("lat"))
-                        {
+                        if (latKey.equalsIgnoreCase("lat")) {
                             lat = jsonReader.nextDouble();
                         }
                         String lngKey = jsonReader.nextName();
-                        if (lngKey.equalsIgnoreCase("lng")){
+                        if (lngKey.equalsIgnoreCase("lng")) {
                             lng = jsonReader.nextDouble();
                         }
                         String altKey = jsonReader.nextName();
-                        if(altKey.equalsIgnoreCase("alt")){
+                        if (altKey.equalsIgnoreCase("alt")) {
                             alt = jsonReader.nextDouble();
                         }
                         String speedKey = jsonReader.nextName();
-                        if(speedKey.equalsIgnoreCase("speed")){
+                        if (speedKey.equalsIgnoreCase("speed")) {
                             speed = jsonReader.nextDouble();
                         }
                         String bearingKey = jsonReader.nextName();
-                        if(bearingKey.equalsIgnoreCase("bearing")){
+                        if (bearingKey.equalsIgnoreCase("bearing")) {
                             bearing = jsonReader.nextDouble();
                         }
                         String batSocKey = jsonReader.nextName();
-                        if(batSocKey.equalsIgnoreCase("bat_soc")){
+                        if (batSocKey.equalsIgnoreCase("bat_soc")) {
                             bat_soc = jsonReader.nextInt();
                         }
                         String uptimeKey = jsonReader.nextName();
-                        if(uptimeKey.equalsIgnoreCase("uptime")){
+                        if (uptimeKey.equalsIgnoreCase("uptime")) {
                             uptime = jsonReader.nextLong();
                         }
                         String LastUpdateKey = jsonReader.nextName();
-                        if(LastUpdateKey.equalsIgnoreCase("last_update")){
+                        if (LastUpdateKey.equalsIgnoreCase("last_update")) {
                             last_update = jsonReader.nextString();
                         }
                         String activeVideoKey = jsonReader.nextName();
-                        if(activeVideoKey.equalsIgnoreCase("active_video")){
+                        if (activeVideoKey.equalsIgnoreCase("active_video")) {
                             active_video = jsonReader.nextInt();
                         }
                         String activeAudioKey = jsonReader.nextName();
-                        if(activeAudioKey.equalsIgnoreCase("active_audio")){
+                        if (activeAudioKey.equalsIgnoreCase("active_audio")) {
                             active_audio = jsonReader.nextInt();
                         }
+                        String activeRecordingKey = jsonReader.nextName();
+                        if (activeRecordingKey.equalsIgnoreCase("active_recording")) {
+                            active_recording = jsonReader.nextInt();
+                        }
                         String ipAddressKey = jsonReader.nextName();
-                        if(ipAddressKey.equalsIgnoreCase("ip_address")){
+                        if (ipAddressKey.equalsIgnoreCase("ip_address")) {
                             ip_address = jsonReader.nextString();
                         }
                         String cameraModeKey = jsonReader.nextName();
-                        if(cameraModeKey.equalsIgnoreCase("camera_mode")){
+                        if (cameraModeKey.equalsIgnoreCase("camera_mode")) {
                             camera_mode = jsonReader.nextInt();
                         }
                         String irActiveKey = jsonReader.nextName();
-                        if(irActiveKey.equalsIgnoreCase("ir_active")){
+                        if (irActiveKey.equalsIgnoreCase("ir_active")) {
                             ir_active = jsonReader.nextInt();
                         }
                         String front_video_activatedKey = jsonReader.nextName();
-                        if(front_video_activatedKey.equalsIgnoreCase("front_video_activated")){
+                        if (front_video_activatedKey.equalsIgnoreCase("front_video_activated")) {
                             front_video_activated = jsonReader.nextInt();
                         }
                         String back_video_activatedKey = jsonReader.nextName();
-                        if(back_video_activatedKey.equalsIgnoreCase("back_video_activated")){
+                        if (back_video_activatedKey.equalsIgnoreCase("back_video_activated")) {
                             back_video_activated = jsonReader.nextInt();
                         }
                         String audio_activatedKey = jsonReader.nextName();
-                        if(audio_activatedKey.equalsIgnoreCase("audio_activated")){
+                        if (audio_activatedKey.equalsIgnoreCase("audio_activated")) {
                             audio_activated = jsonReader.nextInt();
                         }
 
                         String detected_idKey = jsonReader.nextName();
                         try {
-                            if(detected_idKey.equalsIgnoreCase("detected_id")){
+                            if (detected_idKey.equalsIgnoreCase("detected_id")) {
                                 if (jsonReader.peek() != JsonToken.NULL) {
                                     detected_id = jsonReader.nextInt();
-                                }
-                                else {
+                                } else {
                                     jsonReader.skipValue();
                                 }
                             }
-                        } catch(Exception e){
+                        } catch (Exception e) {
                             e.printStackTrace();
                             System.out.println(e);
                         }
                         String detected_objectKey = jsonReader.nextName();
                         try {
-                            if(detected_objectKey.equalsIgnoreCase("detected_object")){
+                            if (detected_objectKey.equalsIgnoreCase("detected_object")) {
                                 if (jsonReader.peek() != JsonToken.NULL) {
                                     detected_object = jsonReader.nextString();
-                                }
-                                else {
+                                } else {
                                     jsonReader.skipValue();
                                 }
                             }
-                        } catch(Exception e){}
+                        } catch (Exception e) {
+                        }
 
                         String detected_agoKey = jsonReader.nextName();
                         try {
                             if (detected_agoKey.equalsIgnoreCase("detected_ago")) {
                                 if (jsonReader.peek() != JsonToken.NULL) {
                                     detected_ago = jsonReader.nextInt();
-                                }
-                                else {
+                                } else {
                                     jsonReader.skipValue();
                                 }
                             }
-                        } catch(Exception e){}
+                        } catch (Exception e) {
+                        }
                         LatLng latLng = new LatLng(lat, lng);
                         Intent i = new Intent("LocationUpdates");
                         Bundle b = new Bundle();
@@ -349,6 +336,7 @@ public class LocationService extends Service {
                         b.putInt("Front_video_activated", front_video_activated);
                         b.putInt("Back_video_activated", back_video_activated);
                         b.putInt("Audio_activated", audio_activated);
+                        b.putInt("Recordin_activated", active_recording);
                         b.putParcelable("LatLng", latLng);
                         b.putInt("Detected_ID", detected_id);
                         b.putString("Detected_Object", detected_object);
@@ -356,15 +344,10 @@ public class LocationService extends Service {
                         i.putExtra("LatLng", b);
                         LocalBroadcastManager.getInstance(this).sendBroadcast(i);
                     }
-                }
-                catch(Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
-            }
-
-
-
-            else{
+            } else {
                 connection.disconnect();
             }
             connection.disconnect();
@@ -384,123 +367,7 @@ public class LocationService extends Service {
         manager.createNotificationChannel(serviceChannel);
     }
 
-    private void streamers(String serialHash){
-        URL endpoint = null;
-
-        try {
-            endpoint = new URL("https://toor.hopto.org/api/v1/config/" + serialHash);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-        URL finalEndpoint = endpoint;
-
-        HttpsURLConnection myConnection =
-                null;
-        try {
-            assert finalEndpoint != null;
-            myConnection = (HttpsURLConnection) finalEndpoint.openConnection();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        String encoded = Base64.getEncoder().encodeToString(SUSIPURKKI_SUSIPURKKI.getBytes(StandardCharsets.UTF_8));
-        myConnection.setRequestProperty("Authorization", "Basic " + encoded);
-        myConnection.setRequestProperty("x-apikey", X_API_KEY);
-
-        try {
-
-            if (myConnection.getResponseCode() == 200){
-                InputStream responseBody = myConnection.getInputStream();
-
-                InputStreamReader responseBodyReader =
-                        new InputStreamReader(responseBody, StandardCharsets.UTF_8);
-
-                JsonReader jsonReader = new JsonReader(responseBodyReader);
-
-                jsonReader.beginObject();
-
-                try {
-                        String serialHashKey = jsonReader.nextName();
-                        String serial_Hash = jsonReader.nextString();
-                        String serialKeyKey = jsonReader.nextName();
-                        String serialKey = jsonReader.nextString();
-                        String startTimeKey = jsonReader.nextName();
-                        String startTime = jsonReader.nextString();
-                        String send_stream_1_addressKey = jsonReader.nextName();
-                        String send_stream_1_address = jsonReader.nextString();
-                        String send_stream_2_addressKey = jsonReader.nextName();
-                        String send_stream_2_address = jsonReader.nextString();
-                        String send_audio_addressKey = jsonReader.nextName();
-                        String send_audio_address = jsonReader.nextString();
-                        String send_stream_1_portKey = jsonReader.nextName();
-                        String send_stream_1_port = jsonReader.nextString();
-                        String send_stream_2_portKey = jsonReader.nextName();
-                        String send_stream_2_port = jsonReader.nextString();
-                        String send_audio_portKey = jsonReader.nextName();
-                        String send_audio_port = jsonReader.nextString();
-                        String send_stream_1_optionsKey = jsonReader.nextName();
-                        String send_stream_1_options = jsonReader.nextString();
-                        String send_stream_2_optionsKey = jsonReader.nextName();
-                        String send_stream_2_options = jsonReader.nextString();
-                        String send_audio_optionsKey = jsonReader.nextName();
-                        String send_audio_options = jsonReader.nextString();
-                        String activate_stream_1Key = jsonReader.nextName();
-                        String activate_stream_1 = jsonReader.nextString();
-                        String activate_stream_2Key = jsonReader.nextName();
-                        String activate_stream_2 = jsonReader.nextString();
-                        String activate_audioKey = jsonReader.nextName();
-                        String activate_audio = jsonReader.nextString();
-                        String activate_ir_ledKey = jsonReader.nextName();
-                        String activate_ir_led = jsonReader.nextString();
-                        String activate_night_visionKey = jsonReader.nextName();
-                        String activate_night_vision = jsonReader.nextString();
-                        String shutdown_allKey = jsonReader.nextName();
-                        String shutdown_all = jsonReader.nextString();
-                        String update_micro_fwKey = jsonReader.nextName();
-                        String update_micro_fw = jsonReader.nextString();
-
-                        String rtsp_url_stream_1Key = jsonReader.nextName();
-                        String rtsp_url_stream_1 = jsonReader.nextString();
-                        String rtsp_url_stream_2Key = jsonReader.nextName();
-                        String rtsp_url_stream_2 = jsonReader.nextString();
-                        String rtsp_url_audioKey = jsonReader.nextName();
-                        String rtsp_url_audio = jsonReader.nextString();
-
-                        String hls_url_stream_1Key = jsonReader.nextName();
-                        String hls_url_stream_1 = jsonReader.nextString();
-                        String hls_url_stream_2Key = jsonReader.nextName();
-                        String hls_url_stream_2 = jsonReader.nextString();
-
-                        String stream_1_keyKey = jsonReader.nextName();
-                        String stream_1_key = jsonReader.nextString();
-                        String stream_2_keyKey = jsonReader.nextName();
-                        String stream_2_key = jsonReader.nextString();
-                        String audio_keyKey = jsonReader.nextName();
-                        String audio_key = jsonReader.nextString();
-
-                        Intent i = new Intent("Streams");
-                        Bundle a = new Bundle();
-                        a.putString("rtsp_url_stream_1", rtsp_url_stream_1);
-                        a.putString("rtsp_url_stream_2", rtsp_url_stream_2);
-                        a.putString("rtsp_url_audio", rtsp_url_audio);
-                        a.putString("stream_1_key", stream_1_key);
-                        a.putString("stream_2_key", stream_2_key);
-                        a.putString("audio_key", audio_key);
-                        i.putExtra("Streams", a);
-                        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
-                }
-                catch(Exception e){e.printStackTrace();}
-            }
-
-
-            else{
-                myConnection.disconnect();
-            }
-            myConnection.disconnect();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    private void route(String serialHash){
+    private void route(String serialHash) {
         URL endpoint = null;
         try {
             endpoint = new URL("https://toor.hopto.org/api/v1/route/" + serialHash + "/geojson/" + session_id + "?every_nth_point=20");
@@ -519,86 +386,35 @@ public class LocationService extends Service {
         connection.setRequestProperty("x-apikey", X_API_KEY);
 
         try {
-            if(session_id != null) {
-                if (connection.getResponseCode() == 200) {
-
-               Scanner scan = new Scanner(connection.getInputStream());
-                String str = "";
-                while(scan.hasNext())
-                    str += scan.nextLine();
-                scan.close();
-
-                JSONObject obj = new JSONObject(str);
-
-                    JSONObject obj2 = obj.getJSONObject("geometry");
-                    JSONArray obj3 = obj2.getJSONArray("coordinates");
-                    ArrayList<LatLng> latLngList = new ArrayList<>();
-
-                    for(int i = 0; i < obj3.length(); i++){
-                        JSONArray arr = obj3.getJSONArray(i);
-                       double lat = arr.getDouble(0);
-                       double lon = arr.getDouble(1);
-                       if(lat != 0.0)
-                            latLngList.add(new LatLng(lon, lat));
-                        }
-                    Collections.reverse(latLngList);
-                    latLngList.subList(ROUTE_LENGTH, latLngList.size()).clear();
-
-                        Intent i = new Intent("Route");
-                        Bundle b = new Bundle();
-                        b.putParcelableArrayList("Route", latLngList );
-                        i.putExtra("Route", b);
-                        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
-
-                } else {
-                    connection.disconnect();
-                }
-                connection.disconnect();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-    }
-    private void recordingStatus(String serialHash){
-        URL endpoint = null;
-        try {
-            endpoint = new URL("https://toor.hopto.org/api/v1/record/status/" + serialHash);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-        HttpsURLConnection connection =
-                null;
-        try {
-            connection = (HttpsURLConnection) endpoint.openConnection();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        String encoded = Base64.getEncoder().encodeToString(SUSIPURKKI_SUSIPURKKI.getBytes(StandardCharsets.UTF_8));
-        connection.setRequestProperty("Authorization", "Basic " + encoded);
-        connection.setRequestProperty("x-apikey", X_API_KEY);
-
-        try {
-            if(session_id != null) {
+            if (session_id != null) {
                 if (connection.getResponseCode() == 200) {
 
                     Scanner scan = new Scanner(connection.getInputStream());
                     String str = "";
-                    while(scan.hasNext())
+                    while (scan.hasNext())
                         str += scan.nextLine();
                     scan.close();
 
                     JSONObject obj = new JSONObject(str);
 
-                    JSONObject obj2 = obj.getJSONObject("front");
-                    int id = obj2.getInt("id");
+                    JSONObject obj2 = obj.getJSONObject("geometry");
+                    JSONArray obj3 = obj2.getJSONArray("coordinates");
+                    ArrayList<LatLng> latLngList = new ArrayList<>();
 
-                    Intent i = new Intent("RecordingStatus");
+                    for (int i = 0; i < obj3.length(); i++) {
+                        JSONArray arr = obj3.getJSONArray(i);
+                        double lat = arr.getDouble(0);
+                        double lon = arr.getDouble(1);
+                        if (lat != 0.0)
+                            latLngList.add(new LatLng(lon, lat));
+                    }
+                    Collections.reverse(latLngList);
+                    latLngList.subList(ROUTE_LENGTH, latLngList.size()).clear();
+
+                    Intent i = new Intent("Route");
                     Bundle b = new Bundle();
-                    b.putInt("RecordingStatus", id);
-                    i.putExtra("RecordingStatus", b);
+                    b.putParcelableArrayList("Route", latLngList);
+                    i.putExtra("Route", b);
                     LocalBroadcastManager.getInstance(this).sendBroadcast(i);
 
                 } else {
