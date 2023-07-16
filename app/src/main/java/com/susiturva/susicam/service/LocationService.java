@@ -99,12 +99,6 @@ public class LocationService extends Service {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        createNotificationChannel();
-
-        //startForegroundService(intent);
-
-        //startForeground(1, notification);
-
 
         Runnable runnable = () -> {
             while (runner) {
@@ -142,18 +136,19 @@ public class LocationService extends Service {
         thread2 = new Thread(runnable1);
         thread2.start();
 
-
         return START_STICKY;
     }
 
     @Override
     public void onCreate() {
+        createNotificationChannel();
         String input = "Off";
         Intent notificationIntent = new Intent(this, MapsActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this,
                 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
         notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("HucKa palvelu")
+                .setChannelId(CHANNEL_ID)
+                .setContentTitle("HukCa palvelu")
                 .setContentText(input)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentIntent(pendingIntent)

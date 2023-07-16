@@ -1,19 +1,11 @@
 package com.susiturva.susicam;
 
 import android.Manifest;
-import android.accounts.AccountManager;
-import android.accounts.AccountManagerCallback;
-import android.accounts.AccountManagerFuture;
-import android.accounts.AuthenticatorException;
-import android.accounts.OperationCanceledException;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.FileUtils;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -31,38 +23,10 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.SignInButton;
-import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.common.api.GoogleApi;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Scope;
-import com.google.auth.oauth2.AccessToken;
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.auth.oauth2.ServiceAccountCredentials;
-import com.google.common.collect.ImmutableSet;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 public class Therion extends Activity {
     TextView sarjanumero;
@@ -78,12 +42,6 @@ public class Therion extends Activity {
 
     public static final int MY_PERMISSIONS_STO = 0;
     private static final int RC_SIGN_IN = 9001;
-    private static final int RC_GET_AUTH_CODE = 9003;
-    private static final String CLIENT_ID ="501679495514-8ejmkgppqbq8cp28nn9kcb1njs74rurj.apps.googleusercontent.com";
-    private static final String CLIENT_SECRET ="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";
-    private static final String REDIRECT_URI ="https://toor.hopto.org";
-
-    private static final String ID_CODE = "4/0AZEOvhVe6N_UqR_bOrYerd9gcaSH1XqQNPvnMWQ4o98NtypE0BiXCDyIxjm2EocLFJO84Q";
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

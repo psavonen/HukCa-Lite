@@ -39,6 +39,7 @@ import android.provider.MediaStore;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.util.JsonReader;
+import android.view.Display;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -156,41 +157,29 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private StyledPlayerView fullscreenFrame;
     private LatLng latLong = new LatLng(0, 0);
     private LatLng latLng;
-    private List<LatLng> points = new ArrayList<>();
     private ArrayList<LatLng> route = new ArrayList<>();
     private Polyline gpsTrack;
     private Polyline lineInBetween;
-    private Circle circle;
-    private HashMap<String, Marker> mMarkers = new HashMap<>();
     private Double alt;
     private Double speed;
-    private Double bearing;
-    //private float dpWidth;
     private Double diagonalInches;
     private static final double EARTH_RADIUS = 6378100.0;
 
-    private Long uptime;
     private final long MIN_TIME = 1000; // 1 second
     private final long MIN_DIST = 0; // 5 Meters
-    private int height;
-    private int width;
     private int bat_soc;
     private int recordingStatus;
-    private int active_streams;
     private int camera_mode;
     private int checkId;
-    private int checkDownloadId;
     private int offset;
     private int detected_id;
     private int detected_ago;
     private int ir_active;
-    private int recording_active;
     private int My_PERMISSION_REQUEST_FINE_LOCATION = 0;
     private int My_PERMISSION_REQUEST_WRITE_ACCESS = 0;
-    private final int SCREEN_WIDTH_THRESHOLD = 1080;
     private final int SOUND_EFFECT_VOLUME = 100;
     private static final int FLEXIBLE_APP_UPDATE_REQ_CODE = 123;
-    private final Double SCREEN_SIZE_THRESHOLD = 6.5;
+    private final Double SCREEN_SIZE_THRESHOLD = 6.7;
     private ProgressBar battery;
     private Marker marker = null;
     private Marker pmarker;
@@ -264,9 +253,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private String AudioSavePathInDevice = null;
     private String audiofile;
     private MediaRecorder mediaRecorder;
-    private Random random;
-    private String RandomAudioFileName = "ABCDEFGHIJKLMNOP";
-    private Resources res;
 
     private AppUpdateManager appUpdateManager;
     private InstallStateUpdatedListener installStateUpdatedListener;
@@ -378,17 +364,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         };
 
-        res = this.getResources();
-
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         try {
-            DisplayMetrics displayMetrics = new DisplayMetrics();
-            getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-            height = displayMetrics.heightPixels;
-            width = displayMetrics.widthPixels;
-            float yInches = displayMetrics.heightPixels / displayMetrics.ydpi;
-            float xInches = displayMetrics.widthPixels / displayMetrics.xdpi;
-            diagonalInches = Math.sqrt(xInches * xInches + yInches * yInches);
+            diagonalInches = getScreenSizeInches(MapsActivity.this);
             //dpWidth = displayMetrics.widthPixels / displayMetrics.density;
         } catch (Exception e) {
             e.printStackTrace();
@@ -543,15 +521,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
         detection.setOnClickListener(view -> {
-            /*if (!checkPermissionForReadExtertalStorage()) {
-                try {
-                    requestPermissionForReadExtertalStorage();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }*/
-
-            //Thread thread = new Thread(() -> {
             Uri uri = null;
             try {
                 uri = getAndSaveImage(detected_id);
@@ -567,9 +536,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 detectionDialog.setVisibility(View.INVISIBLE);
             });
             detection.setVisibility(View.INVISIBLE);
-            //});
-            // thread.start();
-
         });
 
         koira.setTooltipText(getString(R.string.koira_tooltip));
@@ -631,7 +597,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         lahetys.setOnClickListener(v -> {
 
             String sound = "pistol";
-
             String urli = URL_BASE + "/soundeffect/" + srnumero + "/" + sound + "/" + SOUND_EFFECT_VOLUME;
             setControl(urli);
             Toast.makeText(MapsActivity.this,
@@ -1928,6 +1893,40 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
+    }
+    public static double getScreenSizeInches(Activity activity){
+        WindowManager windowManager = activity.getWindowManager();
+        Display display = windowManager.getDefaultDisplay();
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        display.getMetrics(displayMetrics);
+
+        // since SDK_INT = 1;
+        int mWidthPixels = displayMetrics.widthPixels;
+        int mHeightPixels = displayMetrics.heightPixels;
+
+        // includes window decorations (statusbar bar/menu bar)
+        if (Build.VERSION.SDK_INT >= 14 && Build.VERSION.SDK_INT < 17) {
+            try{
+                mWidthPixels = (Integer) Display.class.getMethod("getRawWidth").invoke(display);
+                mHeightPixels = (Integer) Display.class.getMethod("getRawHeight").invoke(display);
+            } catch (Exception ignored) {}
+        }
+
+        // includes window decorations (statusbar bar/menu bar)
+        if (Build.VERSION.SDK_INT >= 17) {
+            try {
+                Point realSize = new Point();
+                Display.class.getMethod("getRealSize", Point.class).invoke(display, realSize);
+                mWidthPixels = realSize.x;
+                mHeightPixels = realSize.y;
+            } catch (Exception ignored) {}
+        }
+
+        DisplayMetrics dm = new DisplayMetrics();
+        activity.getWindowManager().getDefaultDisplay().getMetrics(dm);
+        double x = Math.pow(mWidthPixels / dm.xdpi, 2);
+        double y = Math.pow(mHeightPixels / dm.ydpi, 2);
+        return Math.sqrt(x + y);
     }
 }
 
