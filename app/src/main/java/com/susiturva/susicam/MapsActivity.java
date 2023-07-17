@@ -1,7 +1,6 @@
 package com.susiturva.susicam;
 
 import android.Manifest;
-import android.accounts.Account;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -13,7 +12,6 @@ import android.content.IntentFilter;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -38,7 +36,6 @@ import android.os.storage.StorageVolume;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
-import android.util.JsonReader;
 import android.view.Display;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -53,6 +50,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.OptIn;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -61,20 +59,21 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import com.google.android.exoplayer2.DefaultLoadControl;
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.PlaybackException;
-import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
-import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-import com.google.android.exoplayer2.ui.StyledPlayerView;
-import com.google.android.exoplayer2.upstream.DefaultAllocator;
-import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.Player;
+import androidx.media3.common.util.UnstableApi;
+import androidx.media3.exoplayer.DefaultLoadControl;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.trackselection.AdaptiveTrackSelection;
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
+import androidx.media3.exoplayer.upstream.DefaultAllocator;
+import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter;
+import androidx.media3.ui.PlayerView;
+
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
@@ -85,8 +84,6 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.Circle;
-import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.Dash;
 import com.google.android.gms.maps.model.Dot;
 import com.google.android.gms.maps.model.Gap;
@@ -107,7 +104,6 @@ import com.google.android.play.core.install.model.AppUpdateType;
 import com.google.android.play.core.install.model.InstallStatus;
 import com.google.android.play.core.install.model.UpdateAvailability;
 import com.google.android.play.core.tasks.Task;
-import com.google.gson.JsonArray;
 import com.susiturva.susicam.service.LocationService;
 
 import org.json.JSONException;
@@ -135,7 +131,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -150,11 +145,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private TextView omaNopeus;
     private TextView vmatka;
     public static TextView onOff;
-    private StyledPlayerView playerView;
-    private StyledPlayerView playerView2;
-    private StyledPlayerView playerViewAudio;
-    private StyledPlayerView fullscreenFrame1;
-    private StyledPlayerView fullscreenFrame;
+    private PlayerView playerView;
+    private PlayerView playerView2;
+    private PlayerView playerViewAudio;
+    private PlayerView fullscreenFrame1;
+    private PlayerView fullscreenFrame;
     private LatLng latLong = new LatLng(0, 0);
     private LatLng latLng;
     private ArrayList<LatLng> route = new ArrayList<>();
@@ -175,18 +170,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private int detected_id;
     private int detected_ago;
     private int ir_active;
-    private int My_PERMISSION_REQUEST_FINE_LOCATION = 0;
-    private int My_PERMISSION_REQUEST_WRITE_ACCESS = 0;
     private final int SOUND_EFFECT_VOLUME = 100;
     private static final int FLEXIBLE_APP_UPDATE_REQ_CODE = 123;
-    private final Double SCREEN_SIZE_THRESHOLD = 6.7;
+    private final Double SCREEN_SIZE_THRESHOLD = 6.9;
     private ProgressBar battery;
     private Marker marker = null;
     private Marker pmarker;
-    private Marker puhelin;
     private String detected_object;
     private String last_update;
-    private String ip_address;
     private String rtsp_url_stream_1;
     private String rtsp_url_stream_2;
     private String rtsp_url_audio;
@@ -207,13 +198,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private boolean broadcast = false;
     private boolean huckaOn = false;
     private boolean recordVideoOn = false;
-    private boolean videoMemory = true;
     private boolean videoCheck = true;
-    private boolean fullscreenSwitch = false;
     private boolean fullscreenBackSwitch = false;
     private boolean tunnistuskytkenta = false;
-    private boolean runner = true;
-    private boolean menuswitch = false;
     private ImageButton btnSwitch;
     private ImageButton fullscreenBack;
     private Button toiminnot;
@@ -324,6 +311,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     @SuppressLint("MissingInflatedId")
+    @OptIn(markerClass = UnstableApi.class)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -378,12 +366,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         playerView = findViewById(R.id.player);
         playerView.hideController();
-        playerView.setShowBuffering(StyledPlayerView.SHOW_BUFFERING_ALWAYS);
+        playerView.setShowBuffering(PlayerView.SHOW_BUFFERING_ALWAYS);
         playerView.setPlayer(player);
         playerView2 = findViewById(R.id.player2);
         playerView2.setPlayer(player2);
         playerView2.hideController();
-        playerView2.setShowBuffering(StyledPlayerView.SHOW_BUFFERING_ALWAYS);
+        playerView2.setShowBuffering(PlayerView.SHOW_BUFFERING_ALWAYS);
         playerView.setUseController(false);
         playerView2.setUseController(false);
         playerView.setKeepContentOnPlayerReset(true);
@@ -392,10 +380,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         fullscreenFrame = findViewById(R.id.fullscreen);
         fullscreenFrame.hideController();
         fullscreenFrame.setUseController(false);
-        fullscreenFrame.setShowBuffering(StyledPlayerView.SHOW_BUFFERING_ALWAYS);
+        fullscreenFrame.setShowBuffering(PlayerView.SHOW_BUFFERING_ALWAYS);
         fullscreenFrame1.hideController();
         fullscreenFrame1.setUseController(false);
-        fullscreenFrame1.setShowBuffering(StyledPlayerView.SHOW_BUFFERING_ALWAYS);
+        fullscreenFrame1.setShowBuffering(PlayerView.SHOW_BUFFERING_ALWAYS);
         fullscreenBack = findViewById(R.id.fullscreenBack);
         btnSwitch = findViewById(R.id.connect);
         koira = findViewById(R.id.keskitaKoiraan);
@@ -972,6 +960,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     };
 
+    @OptIn(markerClass = UnstableApi.class)
     private void exoplayerAudio() {
         MediaItem firstStream = MediaItem.fromUri(RTSP_SUSIPURKKI + audio_key + "@" + rtsp_url_audio);
         DefaultLoadControl loadControl = new DefaultLoadControl.Builder()
@@ -1006,7 +995,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         //playerAudio.play();
 
     }
-
+    @OptIn(markerClass = UnstableApi.class)
     private void exoplayerTwoStreams() throws InterruptedException {
         Runnable runnable = new Runnable() {
             @Override
@@ -1050,9 +1039,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         playerView = findViewById(R.id.player);
         playerView.hideController();
         playerView.setPlayer(player);
-        player.addMediaItem(firstStream);
-        // Prepare the player.
-        player.prepare();
+        try {
+            player.addMediaItem(firstStream);
+            // Prepare the player.
+            player.prepare();
+        } catch(Exception e) {
+
+        }
         player.setPlayWhenReady(true);
         player2 = new ExoPlayer.Builder(this)
                 .setTrackSelector(trackSelector)
@@ -1079,6 +1072,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Toast.LENGTH_SHORT).show();
     }
 
+    @OptIn(markerClass = UnstableApi.class)
     private void exoplayer(int stream) {
         stream1 = RTSP_SUSIPURKKI + stream_1_key + "@" + rtsp_url_stream_1;
         stream2 = RTSP_SUSIPURKKI + stream_2_key + "@" + rtsp_url_stream_2;
@@ -1675,7 +1669,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void tunnistusPois() {
         String urli = DETECTOR_CONTORL_URL_BASE + srnumero + "/front/false?interval=5&sound_volume=1";
         Toast.makeText(MapsActivity.this,
-                "Hahmontunnitus pois päältä",
+                "Hahmontunnistus pois päältä",
                 Toast.LENGTH_SHORT).show();
         setControl(urli);
     }
@@ -1723,41 +1717,31 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         return Math.abs(p1.x - p2.x);
     }
     private Bitmap getBitmap(LatLng latLng) {
-
-        // fill color
         Paint paint1 = new Paint(Paint.ANTI_ALIAS_FLAG);
         paint1.setColor(0x110000FF);
         paint1.setStyle(Paint.Style.FILL);
 
-        // stroke color
         Paint paint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
         paint2.setColor(0xFF0000FF);
         paint2.setStyle(Paint.Style.STROKE);
 
-        // icon
         Bitmap icon = BitmapFactory.decodeResource(this.getResources(), R.drawable.human_male_icon_green);
 
-        // circle radius - 200 meters
         int radius = offset = convertMetersToPixels(latLng.latitude, latLng.longitude, 100);
 
-        // if zoom too small
         if (radius < icon.getWidth() / 2) {
 
             radius = icon.getWidth() / 2;
         }
 
-        // create empty bitmap
         Bitmap b = Bitmap.createBitmap(radius * 2, radius * 2, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(b);
 
-        // draw blue area if area > icon size
         if (radius != icon.getWidth() / 2) {
 
             c.drawCircle(radius, radius, radius, paint1);
             c.drawCircle(radius, radius, radius, paint2);
         }
-
-        // draw icon
         c.drawBitmap(icon, radius - icon.getWidth() / 2, radius - icon.getHeight() / 2, new Paint());
 
         return b;
@@ -1808,7 +1792,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (resultCode == RESULT_CANCELED) {
                 Toast.makeText(getApplicationContext(), "Päivitys peruutettu", Toast.LENGTH_LONG).show();
             } else if (resultCode == RESULT_OK) {
-                Toast.makeText(getApplicationContext(),"Päivitys onnistui!", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(),"Päivitys valmiina!", Toast.LENGTH_LONG).show();
             } else {
                 Toast.makeText(getApplicationContext(), "Päivitys epäonnistui " + resultCode, Toast.LENGTH_LONG).show();
                 checkUpdate();
@@ -1900,11 +1884,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         DisplayMetrics displayMetrics = new DisplayMetrics();
         display.getMetrics(displayMetrics);
 
-        // since SDK_INT = 1;
         int mWidthPixels = displayMetrics.widthPixels;
         int mHeightPixels = displayMetrics.heightPixels;
 
-        // includes window decorations (statusbar bar/menu bar)
         if (Build.VERSION.SDK_INT >= 14 && Build.VERSION.SDK_INT < 17) {
             try{
                 mWidthPixels = (Integer) Display.class.getMethod("getRawWidth").invoke(display);
@@ -1912,7 +1894,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             } catch (Exception ignored) {}
         }
 
-        // includes window decorations (statusbar bar/menu bar)
         if (Build.VERSION.SDK_INT >= 17) {
             try {
                 Point realSize = new Point();

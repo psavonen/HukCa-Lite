@@ -33,14 +33,11 @@ public class Therion extends Activity {
     private DatabaseHelper db;
     public Button tallenna;
     public EditText sarjanumeroInput;
-    private int My_PERMISSION_REQUEST_FINE_LOCATION = 0;
-    private int My_PERMISSION_REQUEST_WRITE_ACCESS = 0;
     private GoogleSignInClient mGoogleSignInClient;
     private GoogleSignInAccount account;
     private GoogleSignInOptions gso;
     private GoogleApiClient mGoogleApi;
 
-    public static final int MY_PERMISSIONS_STO = 0;
     private static final int RC_SIGN_IN = 9001;
 
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,7 +108,7 @@ public class Therion extends Activity {
                     }
                 }
                 catch (Exception e){
-                    System.out.println("********************************************************** EI TOIMI PUTSAUS ************************************************");
+                    e.printStackTrace();
                 }
 
                 db.insert(perse);

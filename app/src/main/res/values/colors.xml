@@ -8,6 +8,7 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="hukca_green">#09504e</color>
-    <color name="hukca_orange">#af6946</color>
+    <color name="hukca_orange">#c27d5a</color>
+<!--    <color name="hukca_orange">#af6946</color>-->
 
 </resources>

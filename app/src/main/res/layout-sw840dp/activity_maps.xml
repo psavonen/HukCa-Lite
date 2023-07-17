@@ -42,7 +42,7 @@
         tools:layout_editor_absoluteX="0dp"
         tools:layout_editor_absoluteY="0dp" />
 
-    <com.google.android.exoplayer2.ui.StyledPlayerView
+    <androidx.media3.ui.PlayerView
         android:id="@+id/fullscreen"
         android:layout_height="match_parent"
         android:layout_gravity="center_vertical"
@@ -51,7 +51,7 @@
         android:layout_toEndOf="@id/Vstrut"
         android:visibility="invisible"
         />
-    <com.google.android.exoplayer2.ui.StyledPlayerView
+    <androidx.media3.ui.PlayerView
         android:id="@+id/fullscreen1"
         android:layout_height="match_parent"
         android:layout_gravity="center_vertical"
@@ -60,7 +60,7 @@
         android:layout_toStartOf="@id/Vstrut"
         android:visibility="invisible"
         />
-    <com.google.android.exoplayer2.ui.StyledPlayerView
+    <androidx.media3.ui.PlayerView
         android:id="@+id/player"
         android:layout_width="640dp"
         android:layout_height="wrap_content"
@@ -70,7 +70,7 @@
         android:layout_toStartOf="@id/Vstrut"
         android:layout_gravity="center_vertical" />
 
-    <com.google.android.exoplayer2.ui.StyledPlayerView
+    <androidx.media3.ui.PlayerView
         android:id="@+id/player2"
         android:layout_width="640dp"
         android:layout_height="wrap_content"
@@ -79,7 +79,7 @@
         android:layout_alignTop="@id/Hstrut"
         android:layout_toStartOf="@id/Vstrut"
          />
-    <com.google.android.exoplayer2.ui.StyledPlayerView
+    <androidx.media3.ui.PlayerView
         android:id="@+id/playerAudio"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
