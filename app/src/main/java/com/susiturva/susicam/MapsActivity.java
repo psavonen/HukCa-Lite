@@ -373,7 +373,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         for (MyDBHandler sarjanumero : sarjanumerot) {
             srnumero = String.valueOf(sarjanumero.getSarjanumero());
         }
-        createWebSocketClient();
+
         playerView = findViewById(R.id.player);
         playerView.hideController();
         playerView.setShowBuffering(PlayerView.SHOW_BUFFERING_ALWAYS);
@@ -784,6 +784,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     {
                         try {
                             exoplayerTwoStreams();
+                            createWebSocketClient();
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
@@ -1980,6 +1981,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     speed = o.getDouble("speed");
                                     bat_soc = o.getInt("bat_soc");
                                     last_update = o.getString("last_update");
+                                    int active_video = o.getInt("active_video");
+                                    if (active_video > 0 && !exoplayerPlaying(player)) {
+                                        if(!exoplayerPlaying(player)) {
+                                            exoplayerTwoStreams();
+                                        }
+                                        showLogoWhenNoStream();
+                                    } else if (active_video == 0) {
+                                        showLogoWhenNoStream();
+                                    }
                                     recordingStatus = o.getInt("active_recording");
                                     if (recordingStatus == 0) {
                                         recordVideo.setImageResource(R.drawable.record_video);
@@ -2000,19 +2010,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                             e.printStackTrace();
                                         }
                                         setBattery();
-
-                                        if (powerService()) {
-                                            if (videoCheck) {
-                                                videoCheck = false;
-                                                if (!exoplayerPlaying(player)) {
-                                                    exoplayerTwoStreams();
-                                                }
-                                                showLogoWhenNoStream();
-                                            }
-                                        } else {
-                                            videoCheck = true;
-                                            showLogoWhenNoStream();
-                                        }
+                                        powerService();
                                         koiraNopeus.setText(speed.toString());
                                         if (checkGPSandNetwork()) {
                                             try {
