@@ -104,8 +104,12 @@ import com.google.android.play.core.install.model.AppUpdateType;
 import com.google.android.play.core.install.model.InstallStatus;
 import com.google.android.play.core.install.model.UpdateAvailability;
 import com.google.android.play.core.tasks.Task;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.susiturva.susicam.service.LocationService;
 
+import org.java_websocket.handshake.ServerHandshake;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -119,6 +123,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
@@ -126,6 +132,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -135,6 +142,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.net.ssl.HttpsURLConnection;
+
+import org.java_websocket.client.WebSocketClient;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener {
 
@@ -245,7 +254,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private InstallStateUpdatedListener installStateUpdatedListener;
     private GoogleSignInAccount account;
     private GoogleApiClient mGoogleApiClient;
-
+    private WebSocketClient webSocketClient;
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -364,6 +373,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         for (MyDBHandler sarjanumero : sarjanumerot) {
             srnumero = String.valueOf(sarjanumero.getSarjanumero());
         }
+        createWebSocketClient();
         playerView = findViewById(R.id.player);
         playerView.hideController();
         playerView.setShowBuffering(PlayerView.SHOW_BUFFERING_ALWAYS);
@@ -408,7 +418,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         keskitaPuhelimeen = findViewById(R.id.keskitaPuhelimeen);
 
         if (!isMyServiceRunning(LocationService.class)) {
-            startService();
+            //startService();
         }
 
         try {
@@ -492,7 +502,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 String urlib = URL_BASE + "/record/" + srnumero + "/true?source=back&storage=camera";
                 setControl(urli);
                 setControl(urlib);
-                recordVideo.setImageResource(R.drawable.record_video_stop);
+                //recordVideo.setImageResource(R.drawable.record_video_stop);
                 Toast.makeText(MapsActivity.this, "Nauhoitus päällä",
                         Toast.LENGTH_SHORT).show();
                 recordVideoOn = true;
@@ -502,7 +512,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 String urlib = URL_BASE + "/record/" + srnumero + "/false?source=back&storage=camera";
                 setControl(urli);
                 setControl(urlib);
-                recordVideo.setImageResource(R.drawable.record_video);
+                //recordVideo.setImageResource(R.drawable.record_video);
                 Toast.makeText(MapsActivity.this, "Nauhoitus pois päältä",
                         Toast.LENGTH_SHORT).show();
                 recordVideoOn = false;
@@ -762,11 +772,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         );
 
         if (!isMyServiceRunning(LocationService.class)) {
-            startService();
+           //startService();
         }
-        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter("LocationUpdates"));
+        //LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter("LocationUpdates"));
         //LocalBroadcastManager.getInstance(this).registerReceiver(aMessageReceiver, new IntentFilter("Streams"));
-        LocalBroadcastManager.getInstance(this).registerReceiver(bMessageReceiver, new IntentFilter("Route"));
+        //LocalBroadcastManager.getInstance(this).registerReceiver(bMessageReceiver, new IntentFilter("Route"));
         //LocalBroadcastManager.getInstance(this).registerReceiver(cMessageReceiver, new IntentFilter("RecordingStatus"));
         firstTime = true;
         try {
@@ -1792,7 +1802,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (resultCode == RESULT_CANCELED) {
                 Toast.makeText(getApplicationContext(), "Päivitys peruutettu", Toast.LENGTH_LONG).show();
             } else if (resultCode == RESULT_OK) {
-                Toast.makeText(getApplicationContext(),"Päivitys valmiina!", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(),"Päivitys valmiina! Käynnistä sovellus uudelleen.", Toast.LENGTH_LONG).show();
             } else {
                 Toast.makeText(getApplicationContext(), "Päivitys epäonnistui " + resultCode, Toast.LENGTH_LONG).show();
                 checkUpdate();
@@ -1800,8 +1810,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
     private void popupSnackBarForCompleteUpdate() {
-        Snackbar.make(findViewById(android.R.id.content).getRootView(), "Uusi sovellus on valmis!", Snackbar.LENGTH_INDEFINITE)
-                .setAction("Install", view -> {
+        Snackbar.make(findViewById(android.R.id.content).getRootView(), "Uusi sovellus on valmiina!", Snackbar.LENGTH_INDEFINITE)
+                .setAction("Asenna", view -> {
                     if (appUpdateManager != null) {
                         appUpdateManager.completeUpdate();
                     }
@@ -1908,6 +1918,155 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         double x = Math.pow(mWidthPixels / dm.xdpi, 2);
         double y = Math.pow(mHeightPixels / dm.ydpi, 2);
         return Math.sqrt(x + y);
+    }
+    private void createWebSocketClient() {
+        String encoded = Base64.getEncoder().encodeToString((USERNAME_PASSWORD).getBytes(StandardCharsets.UTF_8));
+        URI uri;
+        try {
+            uri = new URI("wss://toor.hopto.org:443/api/v1/wsphone/" + srnumero);
+        }
+        catch (URISyntaxException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        webSocketClient = new WebSocketClient(uri) {
+            @Override
+            public void onOpen(ServerHandshake serverHandshake) {
+                //byte[] setti = serverHandshake.getContent();
+                System.out.println("SUCCESS");
+                //webSocketClient.send("Hello from " + Build.MANUFACTURER + " " + Build.MODEL);
+            }
+
+            @Override
+            public void onMessage(String s) {
+                final String message = s;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        //System.out.println(s);
+                        JSONObject first = new JSONObject();
+                        JSONObject o = new JSONObject();
+                        JSONObject ob = new JSONObject();
+                        try {
+                            first = new JSONObject(s);
+                        } catch (JSONException e){}
+                        try {
+                            if (!first.isNull("event_type")) {
+                                if(first.getString("event_type").equalsIgnoreCase("interval")) {
+                                    o = first.getJSONObject("message");
+                                    latLng = new LatLng(o.getDouble("lat"), o.getDouble("lng"));
+                                    try {
+                                        if (firstTime) {
+                                            new Handler().postDelayed(() -> {
+                                                new Handler().postDelayed(() ->
+                                                        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLong)), 100);
+                                                mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
+                                                firstTime = false;
+                                            }, 100);
+                                        }
+                                        if (marker != null) {
+                                            marker.remove();
+                                            marker = null;
+                                        }
+                                        if (marker == null) {
+
+                                            marker = mMap.addMarker(new MarkerOptions().title("koira").position(latLong).icon(BitmapDescriptorFactory.fromResource(R.drawable.dog_icon_red_24)));
+                                        }
+
+
+                                    } catch (Exception e) {
+                                    }
+                                    speed = o.getDouble("speed");
+                                    bat_soc = o.getInt("bat_soc");
+                                    last_update = o.getString("last_update");
+                                    recordingStatus = o.getInt("active_recording");
+                                    if (recordingStatus == 0) {
+                                        recordVideo.setImageResource(R.drawable.record_video);
+                                    } else {
+                                        recordVideo.setImageResource(R.drawable.record_video_stop);
+                                    }
+                                    if(!o.isNull("detected_id")) {
+                                        detected_id = o.getInt("detected_id");
+                                    }
+                                    detected_object = o.getString("detected_object");
+                                    if(!o.isNull("detected_ago")) {
+                                        detected_ago = o.getInt("detected_ago");
+                                    }
+                                    try {
+                                        try {
+                                            Detector();
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                        setBattery();
+
+                                        if (powerService()) {
+                                            if (videoCheck) {
+                                                videoCheck = false;
+                                                if (!exoplayerPlaying(player)) {
+                                                    exoplayerTwoStreams();
+                                                }
+                                                showLogoWhenNoStream();
+                                            }
+                                        } else {
+                                            videoCheck = true;
+                                            showLogoWhenNoStream();
+                                        }
+                                        koiraNopeus.setText(speed.toString());
+                                        if (checkGPSandNetwork()) {
+                                            try {
+                                                speedAndLocation();
+                                            } catch (Exception e) {
+                                                e.printStackTrace();
+                                            }
+                                        }
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                if(first.getString("event_type").equalsIgnoreCase("route")){
+                                   ob = first.getJSONObject("message");
+                                   JSONObject oc = ob.getJSONObject("geometry");
+                                   JSONArray obj3 = oc.getJSONArray("coordinates");
+                                    ArrayList<LatLng> latLngList = new ArrayList<>();
+                                    if (!oc.isNull("coordinates")) {
+                                        for (int i = 0; i < obj3.length(); i++) {
+                                            JSONArray arr = obj3.getJSONArray(i);
+                                            double lat = arr.getDouble(0);
+                                            double lon = arr.getDouble(1);
+                                            if (lat != 0.0)
+                                                latLngList.add(new LatLng(lon, lat));
+                                        }
+                                        Collections.reverse(latLngList);
+                                        if (latLngList.size() > 20) {
+                                            latLngList.subList(20, latLngList.size()).clear();
+                                        }
+                                        route = latLngList;
+                                    }
+                                }
+                            }
+
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+
+                    }
+                });
+            }
+            @Override
+            public void onClose(int i, String s, boolean b) {
+                System.out.println("CLOSED");
+            }
+
+            @Override
+            public void onError(Exception e) {
+                System.out.println("ERROR");
+            }
+        };
+        webSocketClient.addHeader("Authorization", "Basic " + encoded);
+        webSocketClient.addHeader("x-apikey", XAPIKEY);
+        webSocketClient.connect();
     }
 }
 

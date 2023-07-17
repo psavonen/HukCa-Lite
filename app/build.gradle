@@ -9,8 +9,8 @@ android {
         applicationId "com.susiturva.susicam"
         minSdk 26
         targetSdk 33
-        versionCode 44
-        versionName "1.99.25"
+        versionCode 45
+        versionName "1.99.26"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -43,7 +43,8 @@ android {
 }
 
 dependencies {
-    implementation 'com.squareup.okhttp3:okhttp:3.11.0'
+    implementation 'org.java-websocket:Java-WebSocket:1.5.3'
+    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
     implementation "androidx.media3:media3-session:1.1.0"
     implementation 'androidx.media3:media3-exoplayer-dash:1.1.0'
     implementation "androidx.media3:media3-exoplayer-rtsp:1.1.0"
