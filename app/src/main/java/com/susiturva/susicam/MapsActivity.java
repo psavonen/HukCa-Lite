@@ -413,9 +413,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         usbMode = findViewById(R.id.usbMode);
         keskitaPuhelimeen = findViewById(R.id.keskitaPuhelimeen);
 
-//        if (!isMyServiceRunning(LocationService.class)) {
-//            //startService();
-//        }
+        try {
+            new Handler().postDelayed(() ->
+                    {
+                        createWebSocketClient();
+                    },
+                    5000);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         try {
             if (diagonalInches >= SCREEN_SIZE_THRESHOLD) {
@@ -753,10 +759,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
     }
-
-    protected void onResume() {
-        super.onResume();
-
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
         getWindow().getDecorView().setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                         | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
@@ -766,13 +770,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         | View.SYSTEM_UI_FLAG_FULLSCREEN
                         | View.SYSTEM_UI_FLAG_LOW_PROFILE
         );
-
         try {
             new Handler().postDelayed(() ->
                     {
                         try {
                             exoplayerTwoStreams();
-                            createWebSocketClient();
+                            //createWebSocketClient();
                             //powerService();
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
@@ -789,6 +792,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    protected void onResume() {
+        super.onResume();
     }
 
     @SuppressLint("MissingPermission")
@@ -970,7 +976,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   /*      player.release();
         player2.release();
         playerAudio.release();*/
-        //stopService();
+        webSocketClient.close();
     }
 
     private void setControl(String url) {
@@ -1761,8 +1767,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         URI uri;
         try {
             uri = new URI("wss://toor.hopto.org:443/api/v1/wsphone/" + srnumero);
-        }
-        catch (URISyntaxException e) {
+        } catch (URISyntaxException e) {
             e.printStackTrace();
             return;
         }
@@ -1770,9 +1775,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         webSocketClient = new WebSocketClient(uri) {
             @Override
             public void onOpen(ServerHandshake serverHandshake) {
-                //byte[] setti = serverHandshake.getContent();
                 System.out.println("SUCCESS");
-                //webSocketClient.send("Hello from " + Build.MANUFACTURER + " " + Build.MODEL);
             }
 
             @Override
@@ -1782,130 +1785,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     @Override
                     public void run() {
                         //System.out.println(s);
-                        JSONObject first = new JSONObject();
-                        JSONObject o = new JSONObject();
-                        JSONObject ob = new JSONObject();
-                        try {
-                            first = new JSONObject(s);
-                        } catch (JSONException e){}
-                        try {
-                            if (!first.isNull("event_type")) {
-                                if(first.getString("event_type").equalsIgnoreCase("interval")) {
-                                    o = first.getJSONObject("message");
-                                    latLng = new LatLng(o.getDouble("lat"), o.getDouble("lng"));
-                                    try {
-                                        if (firstTime) {
-                                            new Handler().postDelayed(() -> {
-                                                new Handler().postDelayed(() ->
-                                                        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLong)), 100);
-                                                mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
-                                                firstTime = false;
-                                            }, 100);
-                                        }
-                                        if (marker != null) {
-                                            marker.remove();
-                                            marker = null;
-                                        }
-                                        if (marker == null) {
-                                            marker = mMap.addMarker(new MarkerOptions().title("koira").position(latLong).icon(BitmapDescriptorFactory.fromResource(R.drawable.dog_icon_red_24)));
-                                        }
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-                                    speed = o.getDouble("speed");
-                                    bat_soc = o.getInt("bat_soc");
-                                    last_update = o.getString("last_update");
-                                    active_video = o.getInt("active_video");
-                                    if (active_video > 0 && !exoplayerPlaying(player)) {
-                                        if(!exoplayerPlaying(player)) {
-                                            exoplayerTwoStreams();
-                                        }
-                                        showLogoWhenNoStream();
-                                    } else if (active_video == 0) {
-                                        showLogoWhenNoStream();
-                                    }
-                                    recordingStatus = o.getInt("active_recording");
-                                    Runnable recordingRunner = new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            try {
-                                                recordingStatus();
-                                            } catch (InterruptedException e) {
-                                                throw new RuntimeException(e);
-                                            }
-                                        }
-                                    };
-                                    Thread recodingThread = new Thread(recordingRunner);
-                                    recodingThread.start();
-
-                                    if(!o.isNull("detected_id")) {
-                                        detected_id = o.getInt("detected_id");
-                                    }
-                                    detected_object = o.getString("detected_object");
-                                    if(!o.isNull("detected_ago")) {
-                                        detected_ago = o.getInt("detected_ago");
-                                    }
-                                    try {
-                                        try {
-                                            Detector();
-                                        } catch (Exception e) {
-                                            e.printStackTrace();
-                                        }
-                                        Runnable batteryRunner = new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                setBattery();
-                                            }
-                                        };
-                                        Thread batteryThread = new Thread(batteryRunner);
-                                        batteryThread.start();
-                                        Runnable powerRunner = new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                try {
-                                                    powerService();
-                                                } catch (ParseException e) {
-                                                    throw new RuntimeException(e);
-                                                }
-                                            }
-                                        };
-                                        Thread powerThread = new Thread(powerRunner);
-                                        //powerThread.start();
-                                        koiraNopeus.setText(speed.toString());
-                                       speedAndLocation();
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                                if(first.getString("event_type").equalsIgnoreCase("route")){
-                                   ob = first.getJSONObject("message");
-                                   JSONObject oc = ob.getJSONObject("geometry");
-                                   JSONArray obj3 = oc.getJSONArray("coordinates");
-                                    ArrayList<LatLng> latLngList = new ArrayList<>();
-                                    if (!oc.isNull("coordinates")) {
-                                        for (int i = 0; i < obj3.length(); i++) {
-                                            JSONArray arr = obj3.getJSONArray(i);
-                                            double lat = arr.getDouble(0);
-                                            double lon = arr.getDouble(1);
-                                            if (lat != 0.0)
-                                                latLngList.add(new LatLng(lon, lat));
-                                        }
-                                        Collections.reverse(latLngList);
-                                        if (latLngList.size() > 20) {
-                                            latLngList.subList(20, latLngList.size()).clear();
-                                        }
-                                        route = latLngList;
-                                    }
-                                }
-                            }
-
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-
-                    }
+                        insideWebSocket(s);
+                }
                 });
+
             }
+
             @Override
             public void onClose(int i, String s, boolean b) {
                 System.out.println("CLOSED");
@@ -1916,9 +1801,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 System.out.println("ERROR");
             }
         };
+
         webSocketClient.addHeader("Authorization", "Basic " + encoded);
         webSocketClient.addHeader("x-apikey", XAPIKEY);
-        webSocketClient.connect();
+        if (!webSocketClient.isOpen()) {
+            webSocketClient.connect();
+        }
     }
     private void location(){
         try {
@@ -1946,6 +1834,129 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             recordVideo.setImageResource(R.drawable.record_video);
         } else {
             recordVideo.setImageResource(R.drawable.record_video_stop);
+        }
+    }
+    private void insideWebSocket(String s) {
+        JSONObject first = new JSONObject();
+        JSONObject o = new JSONObject();
+        JSONObject ob = new JSONObject();
+        try {
+            first = new JSONObject(s);
+        } catch (JSONException e) {
+        }
+        try {
+            if (!first.isNull("event_type")) {
+                if (first.getString("event_type").equalsIgnoreCase("interval")) {
+                    o = first.getJSONObject("message");
+                    latLng = new LatLng(o.getDouble("lat"), o.getDouble("lng"));
+                    try {
+                        if (firstTime) {
+                            new Handler().postDelayed(() -> {
+                                new Handler().postDelayed(() ->
+                                        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLong)), 100);
+                                mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
+                                firstTime = false;
+                            }, 100);
+                        }
+                        if (marker != null) {
+                            marker.remove();
+                            marker = null;
+                        }
+                        if (marker == null) {
+                            marker = mMap.addMarker(new MarkerOptions().title("koira").position(latLong).icon(BitmapDescriptorFactory.fromResource(R.drawable.dog_icon_red_24)));
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    speed = o.getDouble("speed");
+                    bat_soc = o.getInt("bat_soc");
+                    last_update = o.getString("last_update");
+                    active_video = o.getInt("active_video");
+                    if (active_video > 0 && !exoplayerPlaying(player)) {
+                        if (!exoplayerPlaying(player)) {
+                            exoplayerTwoStreams();
+                        }
+                        showLogoWhenNoStream();
+                    } else if (active_video == 0) {
+                        showLogoWhenNoStream();
+                    }
+                    recordingStatus = o.getInt("active_recording");
+                    Runnable recordingRunner = new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                recordingStatus();
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    };
+                    Thread recodingThread = new Thread(recordingRunner);
+                    recodingThread.start();
+
+                    if (!o.isNull("detected_id")) {
+                        detected_id = o.getInt("detected_id");
+                    }
+                    detected_object = o.getString("detected_object");
+                    if (!o.isNull("detected_ago")) {
+                        detected_ago = o.getInt("detected_ago");
+                    }
+                    try {
+                        try {
+                            Detector();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        Runnable batteryRunner = new Runnable() {
+                            @Override
+                            public void run() {
+                                setBattery();
+                            }
+                        };
+                        Thread batteryThread = new Thread(batteryRunner);
+                        batteryThread.start();
+                        Runnable powerRunner = new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    powerService();
+                                } catch (ParseException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                        };
+                        Thread powerThread = new Thread(powerRunner);
+                        //powerThread.start();
+                        koiraNopeus.setText(speed.toString());
+                        //speedAndLocation();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (first.getString("event_type").equalsIgnoreCase("route")) {
+                    ob = first.getJSONObject("message");
+                    JSONObject oc = ob.getJSONObject("geometry");
+                    JSONArray obj3 = oc.getJSONArray("coordinates");
+                    ArrayList<LatLng> latLngList = new ArrayList<>();
+                    if (!oc.isNull("coordinates")) {
+                        for (int i = 0; i < obj3.length(); i++) {
+                            JSONArray arr = obj3.getJSONArray(i);
+                            double lat = arr.getDouble(0);
+                            double lon = arr.getDouble(1);
+                            if (lat != 0.0)
+                                latLngList.add(new LatLng(lon, lat));
+                        }
+                        Collections.reverse(latLngList);
+                        if (latLngList.size() > 20) {
+                            latLngList.subList(20, latLngList.size()).clear();
+                        }
+                        route = latLngList;
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }
