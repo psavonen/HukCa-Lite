@@ -1181,22 +1181,36 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void speedAndLocation() {
         try {
             LocationListener locationListener = location -> {
-
                 latLng = new LatLng(location.getLatitude(), location.getLongitude());
                 double dlat = location.getLatitude();
                 double dlgn = location.getLongitude();
-                double currentSpeed = location.getSpeed();
-                currentSpeed = (double) (currentSpeed * 3.6);
-                currentSpeed = (double) Math.round(currentSpeed * 1d) / 1d;
-                String setti = currentSpeed + "  ";
-                omaNopeus.setText(setti);
-                float[] results = new float[1];
-                double lat = latLong.latitude;
-                double lng = latLong.longitude;
-                Location.distanceBetween(lat, lng, dlat, dlgn, results);
-                float distance = results[0] / 1000;
-                double dist = (double) Math.round(distance * 100d) / 100d;
-                vmatka.setText("Et:" + dist + "km");
+                final double[] currentSpeed = {location.getSpeed()};
+                final String[] setti = new String[1];
+                final double[] dist = new double[1];
+                Runnable slRunner = new Runnable() {
+                    @Override
+                    public void run() {
+                        currentSpeed[0] = (double) (currentSpeed[0] * 3.6);
+                        currentSpeed[0] = (double) Math.round(currentSpeed[0] * 1d) / 1d;
+                        setti[0] = currentSpeed[0] + "  ";
+                        float[] results = new float[1];
+                        double lat = latLong.latitude;
+                        double lng = latLong.longitude;
+                        Location.distanceBetween(lat, lng, dlat, dlgn, results);
+                        float distance = results[0] / 1000;
+                        dist[0] = (double) Math.round(distance * 100d) / 100d;
+
+                    }
+                };
+                Thread slThread = new Thread(slRunner);
+                slThread.start();
+                try {
+                    slThread.join();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                omaNopeus.setText(setti[0]);
+                vmatka.setText("Et:" + dist[0] + "km");
  /*               if (puhelin != null) {
                     puhelin.remove();
                 }
@@ -1228,6 +1242,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 e.printStackTrace();
             }
         } catch (Exception e) {
+            e.printStackTrace();
             Toast.makeText(MapsActivity.this,
                     "KYTKE PAIKANNUS PÄÄLLE",
                     Toast.LENGTH_LONG).show();
@@ -1414,7 +1429,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void Detector() {
-        if (detected_object != null && detected_id != checkId && huckaOn && detected_ago < 30) {
+        if (detected_object != null && detected_id != checkId & detected_ago < 30) {
             checkId = detected_id;
             detection.setVisibility(View.VISIBLE);
             Thread thread = new Thread(() -> {
@@ -1857,20 +1872,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                         Thread powerThread = new Thread(powerRunner);
                                         //powerThread.start();
                                         koiraNopeus.setText(speed.toString());
-                                        Runnable speedRunner = new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                if (checkGPSandNetwork()) {
-                                                    try {
-                                                        speedAndLocation();
-                                                    } catch (Exception e) {
-                                                        e.printStackTrace();
-                                                    }
-                                                }
-                                            }
-                                        };
-                                        Thread speedThread = new Thread(speedRunner);
-                                        speedThread.start();
+                                       speedAndLocation();
                                     } catch (Exception e) {
                                         e.printStackTrace();
                                     }
