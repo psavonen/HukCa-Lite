@@ -4,11 +4,9 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -30,6 +28,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
@@ -55,10 +54,9 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
@@ -104,9 +102,6 @@ import com.google.android.play.core.install.model.AppUpdateType;
 import com.google.android.play.core.install.model.InstallStatus;
 import com.google.android.play.core.install.model.UpdateAvailability;
 import com.google.android.play.core.tasks.Task;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.susiturva.susicam.service.LocationService;
 
 import org.java_websocket.handshake.ServerHandshake;
 import org.json.JSONArray;
@@ -176,6 +171,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private int camera_mode;
     private int checkId;
     private int offset;
+    private int active_video;
     private int detected_id;
     private int detected_ago;
     private int ir_active;
@@ -417,9 +413,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         usbMode = findViewById(R.id.usbMode);
         keskitaPuhelimeen = findViewById(R.id.keskitaPuhelimeen);
 
-        if (!isMyServiceRunning(LocationService.class)) {
-            //startService();
-        }
+//        if (!isMyServiceRunning(LocationService.class)) {
+//            //startService();
+//        }
 
         try {
             if (diagonalInches >= SCREEN_SIZE_THRESHOLD) {
@@ -771,20 +767,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         | View.SYSTEM_UI_FLAG_LOW_PROFILE
         );
 
-        if (!isMyServiceRunning(LocationService.class)) {
-           //startService();
-        }
-        //LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter("LocationUpdates"));
-        //LocalBroadcastManager.getInstance(this).registerReceiver(aMessageReceiver, new IntentFilter("Streams"));
-        //LocalBroadcastManager.getInstance(this).registerReceiver(bMessageReceiver, new IntentFilter("Route"));
-        //LocalBroadcastManager.getInstance(this).registerReceiver(cMessageReceiver, new IntentFilter("RecordingStatus"));
-        firstTime = true;
         try {
             new Handler().postDelayed(() ->
                     {
                         try {
                             exoplayerTwoStreams();
                             createWebSocketClient();
+                            //powerService();
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
@@ -813,171 +802,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLong));
     }
 
-    public void startService() {
-        Intent serviceIntent = new Intent(this, LocationService.class);
-        serviceIntent.putExtra("inputExtra", "HukCa taustapalvelu");
-        ContextCompat.startForegroundService(this, serviceIntent);
-        startForegroundService(serviceIntent);
-
-    }
-
-    public void stopService() {
-        Intent serviceIntent = new Intent(this, LocationService.class);
-        stopService(serviceIntent);
-    }
-
-    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
-        @SuppressLint("SetTextI18n")
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Bundle b = intent.getBundleExtra("LatLng");
-            try {
-                latLong = b.getParcelable("LatLng");
-                if (firstTime) {
-                    new Handler().postDelayed(() -> {
-                        new Handler().postDelayed(() ->
-                                mMap.moveCamera(CameraUpdateFactory.newLatLng(latLong)), 100);
-                        mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
-                        firstTime = false;
-                    }, 100);
-                }
-                if (marker != null) {
-                    marker.remove();
-                    marker = null;
-                }
-                if (marker == null) {
-
-                    marker = mMap.addMarker(new MarkerOptions().title("koira").position(latLong).icon(BitmapDescriptorFactory.fromResource(R.drawable.dog_icon_red_24)));
-                }
-
-
-            } catch (Exception e) {
-            }
-            bat_soc = b.getInt("Bat_soc");
-            alt = b.getDouble("Alt");
-            speed = b.getDouble("Speed");
-            last_update = b.getString("Last_update");
-            camera_mode = b.getInt("Camera_mode");
-            ir_active = b.getInt("Ir_active");
-            recordingStatus = b.getInt("Recordin_activated");
-            if (recordingStatus == 0) {
-                recordVideo.setImageResource(R.drawable.record_video);
-            } else {
-                recordVideo.setImageResource(R.drawable.record_video_stop);
-            }
-            try {
-                detected_id = b.getInt("Detected_ID");
-            } catch (Exception e) {
-            }
-            try {
-                detected_object = b.getString("Detected_Object");
-            } catch (Exception e) {
-            }
-            try {
-                detected_ago = b.getInt("Detected_Ago");
-            } catch (Exception e) {
-            }
-            try {
-                try {
-                    Detector();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                setBattery();
-
-                if (powerService()) {
-                    if (videoCheck) {
-                        videoCheck = false;
-                        if (!exoplayerPlaying(player)) {
-                            exoplayerTwoStreams();
-                        }
-                        showLogoWhenNoStream();
-                    }
-                } else {
-                    videoCheck = true;
-                    showLogoWhenNoStream();
-                }
-                koiraNopeus.setText(speed.toString());
-                if (checkGPSandNetwork()) {
-                    try {
-                        speedAndLocation();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-        }
-    };
-    private BroadcastReceiver aMessageReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-
-            Bundle a = intent.getBundleExtra("Streams");
-
-            try {
-                rtsp_url_stream_1 = a.getString("rtsp_url_stream_1");
-                rtsp_url_stream_2 = a.getString("rtsp_url_stream_2");
-                rtsp_url_audio = a.getString("rtsp_url_audio");
-                stream_1_key = a.getString("stream_1_key");
-                stream_2_key = a.getString("stream_2_key");
-                audio_key = a.getString("audio_key");
-                /*try {
-                    exoplayerTwoStreams();
-                    exoplayerAudio();
-                }
-                catch(Exception e){
-                    e.printStackTrace();
-                }*/
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    };
-
-    private BroadcastReceiver bMessageReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Bundle a = intent.getBundleExtra("Route");
-            try {
-                route = a.getParcelableArrayList("Route");
-                PolylineOptions polylineOptions = new PolylineOptions();
-                polylineOptions.color(Color.RED);
-                polylineOptions.width(8);
-                gpsTrack = mMap.addPolyline(polylineOptions);
-                gpsTrack.setPoints(route);
-                gpsTrack.setZIndex(1000);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    };
-    private BroadcastReceiver cMessageReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Bundle a = intent.getBundleExtra("RecordingStatus");
-            try {
-                recordingStatus = a.getInt("RecordingStatus");
-                if (recordingStatus == -1) {
-                    recordVideo.setImageResource(R.drawable.record_video);
-                } else {
-                    recordVideo.setImageResource(R.drawable.record_video_stop);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    };
-
-    @OptIn(markerClass = UnstableApi.class)
+       @OptIn(markerClass = UnstableApi.class)
     private void exoplayerAudio() {
         MediaItem firstStream = MediaItem.fromUri(RTSP_SUSIPURKKI + audio_key + "@" + rtsp_url_audio);
         DefaultLoadControl loadControl = new DefaultLoadControl.Builder()
                 .setAllocator(new DefaultAllocator(true, 16))
-                .setBufferDurationsMs(500, 500, 500, 500)
-                .setTargetBufferBytes(200 * 64 * 1024)
+                .setBufferDurationsMs(2000, 8000, 2000, 2000)
+                .setTargetBufferBytes(C.LENGTH_UNSET)
                 .setPrioritizeTimeOverSizeThresholds(false)
                 .setBackBuffer(2000, false)
                 .build();
@@ -1025,10 +856,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         DefaultLoadControl loadControl = new DefaultLoadControl.Builder()
                 .setAllocator(new DefaultAllocator(true, 16))
-                .setBufferDurationsMs(500, 500, 500, 500)
-                .setTargetBufferBytes(200 * 64 * 1024)
+                .setBufferDurationsMs(2000, 8000, 2000, 2000)
+                .setTargetBufferBytes(C.LENGTH_UNSET)
                 .setPrioritizeTimeOverSizeThresholds(false)
-                .setBackBuffer(1000, false)
+                .setBackBuffer(2000, false)
                 .build();
 
         final long defaultMaxInitialBitrate = Integer.MAX_VALUE;
@@ -1139,7 +970,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   /*      player.release();
         player2.release();
         playerAudio.release();*/
-        stopService();
+        //stopService();
     }
 
     private void setControl(String url) {
@@ -1457,17 +1288,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         } catch(Exception e){
             e.printStackTrace();
         }*/
-        stopService();
-    }
-
-    private boolean isMyServiceRunning(Class<?> serviceClass) {
-        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceClass.getName().equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
+        //stopService();
     }
 
     @Override
@@ -1971,17 +1792,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                             marker = null;
                                         }
                                         if (marker == null) {
-
                                             marker = mMap.addMarker(new MarkerOptions().title("koira").position(latLong).icon(BitmapDescriptorFactory.fromResource(R.drawable.dog_icon_red_24)));
                                         }
-
-
                                     } catch (Exception e) {
+                                        e.printStackTrace();
                                     }
                                     speed = o.getDouble("speed");
                                     bat_soc = o.getInt("bat_soc");
                                     last_update = o.getString("last_update");
-                                    int active_video = o.getInt("active_video");
+                                    active_video = o.getInt("active_video");
                                     if (active_video > 0 && !exoplayerPlaying(player)) {
                                         if(!exoplayerPlaying(player)) {
                                             exoplayerTwoStreams();
@@ -1991,11 +1810,19 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                         showLogoWhenNoStream();
                                     }
                                     recordingStatus = o.getInt("active_recording");
-                                    if (recordingStatus == 0) {
-                                        recordVideo.setImageResource(R.drawable.record_video);
-                                    } else {
-                                        recordVideo.setImageResource(R.drawable.record_video_stop);
-                                    }
+                                    Runnable recordingRunner = new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            try {
+                                                recordingStatus();
+                                            } catch (InterruptedException e) {
+                                                throw new RuntimeException(e);
+                                            }
+                                        }
+                                    };
+                                    Thread recodingThread = new Thread(recordingRunner);
+                                    recodingThread.start();
+
                                     if(!o.isNull("detected_id")) {
                                         detected_id = o.getInt("detected_id");
                                     }
@@ -2009,16 +1836,41 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                         } catch (Exception e) {
                                             e.printStackTrace();
                                         }
-                                        setBattery();
-                                        powerService();
-                                        koiraNopeus.setText(speed.toString());
-                                        if (checkGPSandNetwork()) {
-                                            try {
-                                                speedAndLocation();
-                                            } catch (Exception e) {
-                                                e.printStackTrace();
+                                        Runnable batteryRunner = new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                setBattery();
                                             }
-                                        }
+                                        };
+                                        Thread batteryThread = new Thread(batteryRunner);
+                                        batteryThread.start();
+                                        Runnable powerRunner = new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                try {
+                                                    powerService();
+                                                } catch (ParseException e) {
+                                                    throw new RuntimeException(e);
+                                                }
+                                            }
+                                        };
+                                        Thread powerThread = new Thread(powerRunner);
+                                        powerThread.start();
+                                        koiraNopeus.setText(speed.toString());
+                                        Runnable speedRunner = new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                if (checkGPSandNetwork()) {
+                                                    try {
+                                                        speedAndLocation();
+                                                    } catch (Exception e) {
+                                                        e.printStackTrace();
+                                                    }
+                                                }
+                                            }
+                                        };
+                                        Thread speedThread = new Thread(speedRunner);
+                                        speedThread.start();
                                     } catch (Exception e) {
                                         e.printStackTrace();
                                     }
@@ -2065,6 +1917,34 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         webSocketClient.addHeader("Authorization", "Basic " + encoded);
         webSocketClient.addHeader("x-apikey", XAPIKEY);
         webSocketClient.connect();
+    }
+    private void location(){
+        try {
+            if (firstTime) {
+                new Handler().postDelayed(() -> {
+                    new Handler().postDelayed(() ->
+                            mMap.moveCamera(CameraUpdateFactory.newLatLng(latLong)), 100);
+                    mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
+                    firstTime = false;
+                }, 100);
+            }
+            if (marker != null) {
+                marker.remove();
+                marker = null;
+            }
+            if (marker == null) {
+                marker = mMap.addMarker(new MarkerOptions().title("koira").position(latLong).icon(BitmapDescriptorFactory.fromResource(R.drawable.dog_icon_red_24)));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    private void recordingStatus() throws InterruptedException {
+        if (recordingStatus == 0) {
+            recordVideo.setImageResource(R.drawable.record_video);
+        } else {
+            recordVideo.setImageResource(R.drawable.record_video_stop);
+        }
     }
 }
 
