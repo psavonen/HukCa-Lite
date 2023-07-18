@@ -1855,7 +1855,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                             }
                                         };
                                         Thread powerThread = new Thread(powerRunner);
-                                        powerThread.start();
+                                        //powerThread.start();
                                         koiraNopeus.setText(speed.toString());
                                         Runnable speedRunner = new Runnable() {
                                             @Override
