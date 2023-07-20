@@ -760,51 +760,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
     }
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        try {
-            new Handler().postDelayed(() ->
-                    {
-                        //exoplayerTwoStreams();
-                        //createWebSocketClient();
-                        //powerService();
-                    },
-                    4000);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-       /* try {
+
+    protected void onResume() {
+        super.onResume();
+        /*try {
             new Handler().postDelayed(() ->
                             exoplayerAudio(),
                     4000);
         } catch (Exception e) {
             e.printStackTrace();
         }*/
-    }
-    protected void onResume() {
-        super.onResume();
-        try {
-            new Handler().postDelayed(() ->
-                    {
-                        try {
-                            exoplayerTwoStreams();
-                            //createWebSocketClient();
-                            //powerService();
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                    },
-                    4000);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try {
-            new Handler().postDelayed(() ->
-                            exoplayerAudio(),
-                    4000);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     @SuppressLint("MissingPermission")
@@ -904,7 +869,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         } catch(Exception e) {
 
         }
-        player.setPlayWhenReady(true);
+        //player.setPlayWhenReady(true);
+        player.play();
         player2 = new ExoPlayer.Builder(this)
                 .setTrackSelector(trackSelector)
                 .setBandwidthMeter(defaultBandwidthMeter)
@@ -918,7 +884,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // Prepare the player.
         player2.prepare();
-        player2.setPlayWhenReady(true);
+        //player2.setPlayWhenReady(true);
+        player2.play();
         playerView.setVisibility(View.VISIBLE);
         playerView2.setVisibility(View.INVISIBLE);
         if (diagonalInches > SCREEN_SIZE_THRESHOLD) {
@@ -1445,9 +1412,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void Detector() {
-        if (detected_object != null && detected_id != checkId & detected_ago < 30) {
+        if (detected_object != null && detected_id != checkId && detected_ago < 30 && detected_object != "null") {
             checkId = detected_id;
-            detection.setVisibility(View.VISIBLE);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    detection.setVisibility(View.VISIBLE);
+                }
+            });
             Thread thread = new Thread(() -> {
                 try {
                     final MediaPlayer mp = MediaPlayer.create(MapsActivity.this, R.raw.beep);
@@ -1464,9 +1436,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             });
             thread.start();
-            Toast.makeText(com.susiturva.susicam.MapsActivity.this,
-                    "HAVAINTO: " + detected_object,
-                    Toast.LENGTH_SHORT).show();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(com.susiturva.susicam.MapsActivity.this,
+                            "HAVAINTO: " + detected_object,
+                            Toast.LENGTH_SHORT).show();
+                }
+            });
         }
     }
 
@@ -1791,6 +1768,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onMessage(String s) {
                 final String message = s;
+
                 Runnable wsRunner = new Runnable() {
                     @Override
                     public void run() {
@@ -1799,6 +1777,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 };
                 Thread wsThread = new Thread(wsRunner);
                 wsThread.start();
+
                /* runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -1885,15 +1864,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            if (active_video > 0 && !exoplayerPlaying(player)) {
+                            /*if (active_video > 0 && !exoplayerPlaying(player)) {
                                     if (!exoplayerPlaying(player)) {
-                                        try {
+                                        *//*try {
                                             exoplayerTwoStreams();
                                         } catch (InterruptedException e) {
                                             throw new RuntimeException(e);
-                                        }
+                                        }*//*
                                     }
-                            }
+                            }*/
                         }
                     });
 
@@ -1920,7 +1899,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                     try {
                         try {
-                            Detector();
+                            if(tunnistuskytkenta) {
+                                Detector();
+                            }
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
