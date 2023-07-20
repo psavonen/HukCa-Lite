@@ -417,9 +417,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         try {
             new Handler().postDelayed(() ->
                     {
+                        try {
+                            exoplayerTwoStreams();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
                         createWebSocketClient();
                     },
-                    5000);
+                    2000);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -763,13 +768,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     protected void onResume() {
         super.onResume();
-        /*try {
+        try {
             new Handler().postDelayed(() ->
                             exoplayerAudio(),
                     4000);
         } catch (Exception e) {
             e.printStackTrace();
-        }*/
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -1192,13 +1197,19 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                omaNopeus.setText(setti[0]);
-                vmatka.setText("Et:" + dist[0] + "km");
-                if (puhelin != null) {
-                    puhelin.remove();
-                }
-                puhelin = mMap.addMarker(new MarkerOptions().position(latLng).title("Puhelin").icon(BitmapDescriptorFactory.fromResource(R.drawable.human_male_icon_green)));
-                puhelin.setTag(new Float(0.0));
+                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        omaNopeus.setText(setti[0]);
+                        vmatka.setText("Et:" + dist[0] + "km");
+                        if (puhelin != null) {
+                            puhelin.remove();
+                        }
+                        puhelin = mMap.addMarker(new MarkerOptions().position(latLng).title("Puhelin").icon(BitmapDescriptorFactory.fromResource(R.drawable.human_male_icon_green)));
+                        puhelin.setTag(new Float(0.0));
+                    }
+                });
+
                /* MarkerOptions options = new MarkerOptions();
                 options.position(getCoords(latLng));
                 try {
@@ -1226,9 +1237,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         } catch (Exception e) {
             e.printStackTrace();
-            Toast.makeText(MapsActivity.this,
-                    "KYTKE PAIKANNUS PÄÄLLE",
-                    Toast.LENGTH_LONG).show();
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(MapsActivity.this,
+                            "KYTKE PAIKANNUS PÄÄLLE",
+                            Toast.LENGTH_LONG).show();
+                }
+            });
+
         }
     }
 
@@ -1341,15 +1358,30 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         try {
             //MapsActivity.onOff.setText("OFF | ");
             float erotus = sinceMidnight - millis;
-            onOff.setText("ON  | ");
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    onOff.setText("ON  | ");
+                }
+            });
             huckaOn = true;
             stopTimer();
             startTimer();
             if (erotus > 5000) {
-                onOff.setText("OFF | ");
+                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        onOff.setText("OFF  | ");
+                    }
+                });
                 huckaOn = false;
             } else {
-                onOff.setText("ON  | ");
+                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        onOff.setText("ON  | ");
+                    }
+                });
                 huckaOn = true;
                 //MapsActivity.firstTime = true;
             }
@@ -1373,7 +1405,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 handler.post(new Runnable() {
                     public void run() {
                         MapsActivity.onOff.setText("OFF | ");
-
                     }
                 });
             }
@@ -1414,12 +1445,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void Detector() {
         if (detected_object != null && detected_id != checkId && detected_ago < 30 && detected_object != "null") {
             checkId = detected_id;
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    detection.setVisibility(View.VISIBLE);
-                }
-            });
+            detection.setVisibility(View.VISIBLE);
             Thread thread = new Thread(() -> {
                 try {
                     final MediaPlayer mp = MediaPlayer.create(MapsActivity.this, R.raw.beep);
@@ -1436,14 +1462,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             });
             thread.start();
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(com.susiturva.susicam.MapsActivity.this,
-                            "HAVAINTO: " + detected_object,
-                            Toast.LENGTH_SHORT).show();
-                }
-            });
+            Toast.makeText(com.susiturva.susicam.MapsActivity.this,
+                "HAVAINTO: " + detected_object,
+                Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -1768,7 +1789,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onMessage(String s) {
                 final String message = s;
-
+                /*new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        insideWebSocket(message);
+                    }
+                });*/
                 Runnable wsRunner = new Runnable() {
                     @Override
                     public void run() {
@@ -1790,11 +1816,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             @Override
             public void onClose(int i, String s, boolean b) {
+                showLogoWhenNoStream();
                 System.out.println("CLOSED");
             }
 
             @Override
             public void onError(Exception e) {
+                showLogoWhenNoStream();
                 System.out.println("ERROR");
             }
         };
@@ -1827,10 +1855,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     o = first.getJSONObject("message");
                     latLng = new LatLng(o.getDouble("lat"), o.getDouble("lng"));
                     try {
-                        if (firstTime) {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
+                        new Handler(Looper.getMainLooper()).post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (firstTime) {
                                     new Handler().postDelayed(() -> {
                                         new Handler().postDelayed(() ->
                                                 mMap.moveCamera(CameraUpdateFactory.newLatLng(latLong)), 100);
@@ -1838,22 +1866,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                         firstTime = false;
                                     }, 100);
                                 }
-                            });
-
-                        }
-
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (marker != null) {
-                                        marker.remove();
-                                        marker = null;
-                                    }
-                                    if (marker == null) {
-                                        marker = mMap.addMarker(new MarkerOptions().title("koira").position(latLong).icon(BitmapDescriptorFactory.fromResource(R.drawable.dog_icon_red_24)));
-                                    }
+                                if (marker != null) {
+                                    marker.remove();
+                                    marker = null;
                                 }
-                            });
+                                if (marker == null) {
+                                    marker = mMap.addMarker(new MarkerOptions().title("koira").position(latLong).icon(BitmapDescriptorFactory.fromResource(R.drawable.dog_icon_red_24)));
+                                }
+                            }
+                        });
+
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -1861,18 +1883,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     bat_soc = o.getInt("bat_soc");
                     last_update = o.getString("last_update");
                     active_video = o.getInt("active_video");
-                    runOnUiThread(new Runnable() {
+                    new Handler(Looper.getMainLooper()).post(new Runnable() {
                         @Override
                         public void run() {
-                            /*if (active_video > 0 && !exoplayerPlaying(player)) {
-                                    if (!exoplayerPlaying(player)) {
-                                        *//*try {
-                                            exoplayerTwoStreams();
-                                        } catch (InterruptedException e) {
-                                            throw new RuntimeException(e);
-                                        }*//*
+                            if (active_video > 0 && !exoplayerPlaying(player)) {
+                                if (!exoplayerPlaying(player)) {
+                                    try {
+                                        exoplayerTwoStreams();
+                                    } catch (InterruptedException e) {
+                                        throw new RuntimeException(e);
                                     }
-                            }*/
+                                }
+                            }
                         }
                     });
 
@@ -1889,6 +1911,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     };
                     Thread recodingThread = new Thread(recordingRunner);
                     recodingThread.start();
+                    recodingThread.join();
 
                     if (!o.isNull("detected_id")) {
                         detected_id = o.getInt("detected_id");
@@ -1913,6 +1936,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         };
                         Thread batteryThread = new Thread(batteryRunner);
                         batteryThread.start();
+                        batteryThread.join();
                         Runnable powerRunner = new Runnable() {
                             @Override
                             public void run() {
@@ -1925,14 +1949,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         };
                         Thread powerThread = new Thread(powerRunner);
                         powerThread.start();
-                        koiraNopeus.setText(Double.toString(speed));
-                        runOnUiThread(new Runnable() {
+                        powerThread.join();
+                        new Handler(Looper.getMainLooper()).post(new Runnable() {
                             @Override
                             public void run() {
-                                speedAndLocation();
+                                koiraNopeus.setText(Double.toString(speed));
                             }
                         });
-
+                        new Handler(Looper.getMainLooper()).post(new Runnable() {
+                            @Override
+                            public void run() {
+                                new Handler().postDelayed(() ->
+                                        speedAndLocation(),
+                                        2000);
+                            }
+                        });
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
