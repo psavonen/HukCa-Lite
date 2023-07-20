@@ -181,6 +181,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ProgressBar battery;
     private Marker marker = null;
     private Marker pmarker;
+    private Marker puhelin;
     private String detected_object;
     private String last_update;
     private String rtsp_url_stream_1;
@@ -320,10 +321,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setFlags(
-                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-        );
+//        getWindow().setFlags(
+//                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+//                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+//        );
 
         getWindow().getDecorView().setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
@@ -761,15 +762,27 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
-        getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN
-                        | View.SYSTEM_UI_FLAG_LOW_PROFILE
-        );
+        try {
+            new Handler().postDelayed(() ->
+                    {
+                        //exoplayerTwoStreams();
+                        //createWebSocketClient();
+                        //powerService();
+                    },
+                    4000);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+       /* try {
+            new Handler().postDelayed(() ->
+                            exoplayerAudio(),
+                    4000);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }*/
+    }
+    protected void onResume() {
+        super.onResume();
         try {
             new Handler().postDelayed(() ->
                     {
@@ -792,9 +805,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-    protected void onResume() {
-        super.onResume();
     }
 
     @SuppressLint("MissingPermission")
@@ -1217,12 +1227,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
                 omaNopeus.setText(setti[0]);
                 vmatka.setText("Et:" + dist[0] + "km");
- /*               if (puhelin != null) {
+                if (puhelin != null) {
                     puhelin.remove();
                 }
                 puhelin = mMap.addMarker(new MarkerOptions().position(latLng).title("Puhelin").icon(BitmapDescriptorFactory.fromResource(R.drawable.human_male_icon_green)));
-                puhelin.setTag(new Float(0.0));*/
-                MarkerOptions options = new MarkerOptions();
+                puhelin.setTag(new Float(0.0));
+               /* MarkerOptions options = new MarkerOptions();
                 options.position(getCoords(latLng));
                 try {
                     options.icon(BitmapDescriptorFactory.fromBitmap(getBitmap(latLng))).title("100m");
@@ -1233,7 +1243,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if (pmarker != null) {
                     pmarker.remove();
                 }
-                pmarker = mMap.addMarker(options);
+                pmarker = mMap.addMarker(options);*/
 
                 if (lineInBetween != null)  {
                     lineInBetween.remove();
@@ -1608,16 +1618,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         return proj.fromScreenLocation(p);
     }
     private void showLogoWhenNoStream(){
-        try {
-            if (!exoplayerPlaying(player)) {
-                btnSwitch.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.hucka_play, null));
-            } else {
-                btnSwitch.setBackground(null);
-                btnSwitch.setBackgroundColor(Color.TRANSPARENT);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//        try {
+//            if (!exoplayerPlaying(player)) {
+//                btnSwitch.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.hucka_play, null));
+//            } else {
+//                btnSwitch.setBackground(null);
+//                btnSwitch.setBackgroundColor(Color.TRANSPARENT);
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
     }
     private void checkUpdate() {
 
@@ -1781,13 +1791,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onMessage(String s) {
                 final String message = s;
-                runOnUiThread(new Runnable() {
+                Runnable wsRunner = new Runnable() {
+                    @Override
+                    public void run() {
+                        insideWebSocket(message);
+                    }
+                };
+                Thread wsThread = new Thread(wsRunner);
+                wsThread.start();
+               /* runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         //System.out.println(s);
                         insideWebSocket(s);
                 }
-                });
+                });*/
 
             }
 
@@ -1808,27 +1826,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             webSocketClient.connect();
         }
     }
-    private void location(){
-        try {
-            if (firstTime) {
-                new Handler().postDelayed(() -> {
-                    new Handler().postDelayed(() ->
-                            mMap.moveCamera(CameraUpdateFactory.newLatLng(latLong)), 100);
-                    mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
-                    firstTime = false;
-                }, 100);
-            }
-            if (marker != null) {
-                marker.remove();
-                marker = null;
-            }
-            if (marker == null) {
-                marker = mMap.addMarker(new MarkerOptions().title("koira").position(latLong).icon(BitmapDescriptorFactory.fromResource(R.drawable.dog_icon_red_24)));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
     private void recordingStatus() throws InterruptedException {
         if (recordingStatus == 0) {
             recordVideo.setImageResource(R.drawable.record_video);
@@ -1836,6 +1833,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             recordVideo.setImageResource(R.drawable.record_video_stop);
         }
     }
+    @SuppressLint("SetTextI18n")
     private void insideWebSocket(String s) {
         JSONObject first = new JSONObject();
         JSONObject o = new JSONObject();
@@ -1851,20 +1849,32 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     latLng = new LatLng(o.getDouble("lat"), o.getDouble("lng"));
                     try {
                         if (firstTime) {
-                            new Handler().postDelayed(() -> {
-                                new Handler().postDelayed(() ->
-                                        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLong)), 100);
-                                mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
-                                firstTime = false;
-                            }, 100);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    new Handler().postDelayed(() -> {
+                                        new Handler().postDelayed(() ->
+                                                mMap.moveCamera(CameraUpdateFactory.newLatLng(latLong)), 100);
+                                        mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
+                                        firstTime = false;
+                                    }, 100);
+                                }
+                            });
+
                         }
-                        if (marker != null) {
-                            marker.remove();
-                            marker = null;
-                        }
-                        if (marker == null) {
-                            marker = mMap.addMarker(new MarkerOptions().title("koira").position(latLong).icon(BitmapDescriptorFactory.fromResource(R.drawable.dog_icon_red_24)));
-                        }
+
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (marker != null) {
+                                        marker.remove();
+                                        marker = null;
+                                    }
+                                    if (marker == null) {
+                                        marker = mMap.addMarker(new MarkerOptions().title("koira").position(latLong).icon(BitmapDescriptorFactory.fromResource(R.drawable.dog_icon_red_24)));
+                                    }
+                                }
+                            });
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -1872,14 +1882,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     bat_soc = o.getInt("bat_soc");
                     last_update = o.getString("last_update");
                     active_video = o.getInt("active_video");
-                    if (active_video > 0 && !exoplayerPlaying(player)) {
-                        if (!exoplayerPlaying(player)) {
-                            exoplayerTwoStreams();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (active_video > 0 && !exoplayerPlaying(player)) {
+                                    if (!exoplayerPlaying(player)) {
+                                        try {
+                                            exoplayerTwoStreams();
+                                        } catch (InterruptedException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    }
+                            }
                         }
-                        showLogoWhenNoStream();
-                    } else if (active_video == 0) {
-                        showLogoWhenNoStream();
-                    }
+                    });
+
                     recordingStatus = o.getInt("active_recording");
                     Runnable recordingRunner = new Runnable() {
                         @Override
@@ -1926,9 +1943,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             }
                         };
                         Thread powerThread = new Thread(powerRunner);
-                        //powerThread.start();
-                        koiraNopeus.setText(speed.toString());
-                        //speedAndLocation();
+                        powerThread.start();
+                        koiraNopeus.setText(Double.toString(speed));
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                speedAndLocation();
+                            }
+                        });
+
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
