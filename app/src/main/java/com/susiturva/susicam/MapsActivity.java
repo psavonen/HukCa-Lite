@@ -142,6 +142,7 @@ import org.java_websocket.client.WebSocketClient;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener {
 
+    public static final String WSS = "wss://toor.hopto.org:443/api/v1/wsphone/";
     private StorageVolume storageVolume;
     private ImageView detectionDialog;
     private GoogleMap mMap;
@@ -863,10 +864,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .setBandwidthMeter(defaultBandwidthMeter)
                 .setLoadControl(loadControl)
                 .build();
-
-        playerView = findViewById(R.id.player);
-        playerView.hideController();
-        playerView.setPlayer(player);
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                playerView = findViewById(R.id.player);
+                playerView.hideController();
+                playerView.setPlayer(player);
+            }
+        });
         try {
             player.addMediaItem(firstStream);
             // Prepare the player.
@@ -874,28 +879,38 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         } catch(Exception e) {
 
         }
-        //player.setPlayWhenReady(true);
-        player.play();
+        player.setPlayWhenReady(true);
         player2 = new ExoPlayer.Builder(this)
                 .setTrackSelector(trackSelector)
                 .setBandwidthMeter(defaultBandwidthMeter)
                 .setLoadControl(loadControl)
                 .build();
-        playerView2 = findViewById(R.id.player2);
-        playerView2.hideController();
-        playerView2.setPlayer(player2);
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                playerView2 = findViewById(R.id.player2);
+                playerView2.hideController();
+                playerView2.setPlayer(player2);
+            }
+        });
 
         player2.addMediaItem(secondStream);
 
         // Prepare the player.
         player2.prepare();
-        //player2.setPlayWhenReady(true);
-        player2.play();
-        playerView.setVisibility(View.VISIBLE);
-        playerView2.setVisibility(View.INVISIBLE);
-        if (diagonalInches > SCREEN_SIZE_THRESHOLD) {
-            playerView2.setVisibility(View.VISIBLE);
-        }
+        player2.setPlayWhenReady(true);
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                playerView.setVisibility(View.VISIBLE);
+
+                playerView2.setVisibility(View.INVISIBLE);
+                if (diagonalInches > SCREEN_SIZE_THRESHOLD) {
+                    playerView2.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+
         handlePlaybackError();
         Toast.makeText(MapsActivity.this,
                 "Pieni hetki, video yhdistyy.",
@@ -1367,7 +1382,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             huckaOn = true;
             stopTimer();
             startTimer();
-            if (erotus > 5000) {
+            if (erotus > 6000) {
                 new Handler(Looper.getMainLooper()).post(new Runnable() {
                     @Override
                     public void run() {
@@ -1518,7 +1533,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             return false;
         }
     }
-
+    private boolean exoplayerBuffering(ExoPlayer exoPlayer) {
+        if (exoPlayer.getPlaybackState() == Player.STATE_BUFFERING) {
+            return true;
+        } else {
+            return false;
+        }
+    }
     private void tunnistusPaalle() {
         String urli = DETECTOR_CONTORL_URL_BASE + srnumero + "/front/true?interval=5&sound_volume=1";
         Toast.makeText(MapsActivity.this,
@@ -1616,16 +1637,24 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         return proj.fromScreenLocation(p);
     }
     private void showLogoWhenNoStream(){
-//        try {
-//            if (!exoplayerPlaying(player)) {
-//                btnSwitch.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.hucka_play, null));
-//            } else {
-//                btnSwitch.setBackground(null);
-//                btnSwitch.setBackgroundColor(Color.TRANSPARENT);
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
+        try {
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    if(player != null) {
+                        if (!exoplayerPlaying(player)) {
+                            btnSwitch.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.hucka_play, null));
+                        } else {
+                            btnSwitch.setBackground(null);
+                            btnSwitch.setBackgroundColor(Color.TRANSPARENT);
+                        }
+                    }
+                }
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     private void checkUpdate() {
 
@@ -1774,7 +1803,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         String encoded = Base64.getEncoder().encodeToString((USERNAME_PASSWORD).getBytes(StandardCharsets.UTF_8));
         URI uri;
         try {
-            uri = new URI("wss://toor.hopto.org:443/api/v1/wsphone/" + srnumero);
+            uri = new URI(WSS + srnumero);
         } catch (URISyntaxException e) {
             e.printStackTrace();
             return;
@@ -1789,13 +1818,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onMessage(String s) {
                 final String message = s;
-                /*new Handler(Looper.getMainLooper()).post(new Runnable() {
-                    @Override
-                    public void run() {
-                        insideWebSocket(message);
-                    }
-                });*/
-                Runnable wsRunner = new Runnable() {
+              Runnable wsRunner = new Runnable() {
                     @Override
                     public void run() {
                         insideWebSocket(message);
@@ -1803,15 +1826,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 };
                 Thread wsThread = new Thread(wsRunner);
                 wsThread.start();
-
-               /* runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        //System.out.println(s);
-                        insideWebSocket(s);
-                }
-                });*/
-
             }
 
             @Override
@@ -1825,6 +1839,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 showLogoWhenNoStream();
                 System.out.println("ERROR");
             }
+
         };
 
         webSocketClient.addHeader("Authorization", "Basic " + encoded);
@@ -1853,7 +1868,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (!first.isNull("event_type")) {
                 if (first.getString("event_type").equalsIgnoreCase("interval")) {
                     o = first.getJSONObject("message");
-                    latLng = new LatLng(o.getDouble("lat"), o.getDouble("lng"));
+                    latLong = new LatLng(o.getDouble("lat"), o.getDouble("lng"));
                     try {
                         new Handler(Looper.getMainLooper()).post(new Runnable() {
                             @Override
@@ -1886,14 +1901,25 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     new Handler(Looper.getMainLooper()).post(new Runnable() {
                         @Override
                         public void run() {
-                            if (active_video > 0 && !exoplayerPlaying(player)) {
-                                if (!exoplayerPlaying(player)) {
+//                            if (active_video == 1 && !exoplayerPlaying(player)) {
+//                                if (!exoplayerPlaying(player) && !exoplayerBuffering(player)) {
+//                                   try {
+//                                        exoplayerTwoStreams();
+//                                    } catch (InterruptedException e) {
+//                                        throw new RuntimeException(e);
+//                                    }
+//                                }
+//                            }
+                            if (active_video == 2 && !exoplayerPlaying(player2)) {
+                                if (!exoplayerPlaying(player2) && !exoplayerBuffering(player2)) {
                                     try {
                                         exoplayerTwoStreams();
                                     } catch (InterruptedException e) {
                                         throw new RuntimeException(e);
                                     }
                                 }
+                            } else {
+                                showLogoWhenNoStream();
                             }
                         }
                     });
@@ -1941,7 +1967,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             @Override
                             public void run() {
                                 try {
-                                    powerService();
+                                    if (!powerService()) {
+                                        showLogoWhenNoStream();
+                                    }
                                 } catch (ParseException e) {
                                     throw new RuntimeException(e);
                                 }

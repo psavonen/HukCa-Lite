@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#09504e">
+
+
+    <ImageView
+        android:id="@+id/connect"
+        android:layout_width="300dp"
+        android:layout_height="485dp"
+        android:layout_gravity="center_horizontal"
+        android:src="@drawable/hucka_green" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:text="Powered by:"
+        android:textAlignment="center"
+        android:textColor="#af6946"
+        android:textSize="24dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:textColor="#af6946"
+        android:text="Google"
+        android:textAlignment="center"
+        android:textSize="18dp" />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:textColor="#af6946"
+        android:text="Maanmittauslaitos"
+        android:textAlignment="center"
+        android:textSize="18dp" />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:textColor="#af6946"
+        android:text="- peruskarttarasteri "
+        android:textAlignment="center"
+        android:textSize="18dp" />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:textColor="#af6946"
+        android:text="- 28.06.2023	 "
+        android:textAlignment="center"
+        android:textSize="18dp" />
+
+</LinearLayout>
