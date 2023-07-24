@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
@@ -82,6 +83,11 @@ public class WatchersActivity extends AppCompatActivity implements AdapterView.O
         // Apply the adapter to the spinner
         spinner.setAdapter(adapter);
         EditText input = findViewById(R.id.email);
+        Button poistu = findViewById(R.id.poistu);
+        poistu.setOnClickListener(v -> {
+            Intent intent = new Intent(WatchersActivity.this, MapsActivity.class);
+            startActivity(intent);
+        });
         Button tallenna = findViewById(R.id.tallenna);
         tallenna.setOnClickListener(v -> {
             setControl("https://toor.hopto.org/api/v1/users/watcher?email="
@@ -112,7 +118,7 @@ public class WatchersActivity extends AppCompatActivity implements AdapterView.O
         }
 
         for (int i = 0; i < listdata.stream().count(); i++) {
-            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             LinearLayout layout = findViewById(R.id.layout);
             Button buttonView = new Button(this);
             buttonView.setBackgroundColor(000000);

@@ -19,8 +19,8 @@
     <!--    <string name="server_client_id">501679495514-finefdtdmt4r7fs3paq02k74cbtio8d0.apps.googleusercontent.com</string>-->
     <string name="server_client_id">501679495514-8ejmkgppqbq8cp28nn9kcb1njs74rurj.apps.googleusercontent.com</string>
     <string-array name="time_array">
-        <item>1vko</item>
-        <item>1kk</item>
-        <item>1v</item>
+        <item>1 viikko</item>
+        <item>1 kuukausi</item>
+        <item>1 vuosi</item>
     </string-array>
 </resources>
