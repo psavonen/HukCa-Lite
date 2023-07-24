@@ -1,4 +1,4 @@
-package com.susiturva.susicam;
+package com.susiturva.susicam.DatabaseHandlers;
 
 public class MyDBHandlerHukcaKey {
 

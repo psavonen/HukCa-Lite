@@ -28,13 +28,14 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
-import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.susiturva.susicam.DatabaseHandlers.DatabaseHelper;
+import com.susiturva.susicam.DatabaseHandlers.DatabaseHelperHukcaKey;
+import com.susiturva.susicam.DatabaseHandlers.MyDBHandler;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -178,14 +179,14 @@ public class Therion extends Activity {
 
 
                 Intent intent = new Intent(Therion.this, MapsActivity.class);
-                account = GoogleSignIn.getLastSignedInAccount(Therion.this);
-                if (account != null) {
+                /*account = GoogleSignIn.getLastSignedInAccount(Therion.this);
+                if (account != null) {*/
                     startActivity(intent);
-                }
+               /* }
                 else {
                     Toast.makeText(Therion.this, "Kirjaudu Google tilille.",Toast.LENGTH_LONG).show();
 
-                }
+                }*/
             }
 
         });//Nappi loppuu

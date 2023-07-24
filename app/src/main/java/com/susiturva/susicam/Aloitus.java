@@ -1,20 +1,17 @@
 package com.susiturva.susicam;
 
-import android.Manifest;
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 
-import androidx.core.app.ActivityCompat;
-
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.susiturva.susicam.DatabaseHandlers.DatabaseHelper;
+import com.susiturva.susicam.DatabaseHandlers.MyDBHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,12 +33,12 @@ public class Aloitus extends Activity {
 
 
         }
-        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        //GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
         new Handler().postDelayed(new Runnable() {
             @Override
 
             public void run() {
-                if(srnumero == null || account == null) {
+                if(srnumero == null) {
                     Intent intent = new Intent(Aloitus.this, Therion.class);
                     startActivity(intent);
 
@@ -51,7 +48,7 @@ public class Aloitus extends Activity {
                     startActivity(intent);
                 }
             }
-        }, 3000);
+        }, 1000);
         ImageView imageView = findViewById(R.id.connect);
         imageView.setOnTouchListener(new View.OnTouchListener() {
             @Override

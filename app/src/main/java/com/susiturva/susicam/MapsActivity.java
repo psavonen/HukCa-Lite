@@ -3,7 +3,6 @@ package com.susiturva.susicam;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -28,7 +27,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
@@ -78,13 +76,9 @@ import com.google.android.gms.auth.api.identity.SignInCredential;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.auth.api.signin.GoogleSignInResult;
-import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -114,14 +108,11 @@ import com.google.android.play.core.install.model.AppUpdateType;
 import com.google.android.play.core.install.model.InstallStatus;
 import com.google.android.play.core.install.model.UpdateAvailability;
 import com.google.android.play.core.tasks.Task;
+import com.susiturva.susicam.DatabaseHandlers.DatabaseHelper;
+import com.susiturva.susicam.DatabaseHandlers.DatabaseHelperHukcaKey;
+import com.susiturva.susicam.DatabaseHandlers.MyDBHandler;
+import com.susiturva.susicam.DatabaseHandlers.MyDBHandlerHukcaKey;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.java_websocket.handshake.ServerHandshake;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -140,7 +131,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -328,7 +318,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             }
                         });
                 return true;
-
+            case R.id.katsoja:
+                Intent katsojaIntent = new Intent(com.susiturva.susicam.MapsActivity.this, WatchersActivity.class);
+                startActivity(katsojaIntent);
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -1874,12 +1867,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onStart();
 
 
-        account = GoogleSignIn.getLastSignedInAccount(this);
+        /*account = GoogleSignIn.getLastSignedInAccount(this);
         if (account == null) {
             Toast.makeText(getApplicationContext(), "Kirjaudu Google tilille", Toast.LENGTH_LONG).show();
             Intent intent = new Intent(MapsActivity.this, Therion.class);
             startActivity(intent);
-        }
+        }*/
     }
     private void getStreamers(String serialHash) {
         URL endpoint = null;
