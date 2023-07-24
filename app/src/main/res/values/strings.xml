@@ -16,5 +16,7 @@
     <string name="menu">Menu</string>
     <string name="koira">Koira</string>
     <string name="opacity">0.8</string>
+<!--    <string name="server_client_id">501679495514-finefdtdmt4r7fs3paq02k74cbtio8d0.apps.googleusercontent.com</string>-->
     <string name="server_client_id">501679495514-8ejmkgppqbq8cp28nn9kcb1njs74rurj.apps.googleusercontent.com</string>
+
 </resources>

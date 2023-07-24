@@ -316,10 +316,10 @@
         android:id="@+id/toiminnot"
         android:layout_marginStart="2dp"
         android:layout_alignParentEnd="true"
-        android:layout_below="@id/battery"
-        android:layout_marginTop="5dp"
+
         android:layout_width="50dp"
         android:layout_height="68dp"
+        android:layout_centerVertical="true"
         android:text=""
         android:textSize="24sp"
         android:background="@color/hukca_green"

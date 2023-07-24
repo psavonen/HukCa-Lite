@@ -6,7 +6,7 @@ public class MyDBHandler {
     private String sarjanumero;
    
     //Tietokannan tiedot
-    public static final String TABLE_NAME = "SusiCam";
+    public static final String TABLE_NAME = "hukca";
     public static final String COLUMN_ID = "Id";
     public static final String COLUMN_SARJANUMERO = "sarjanumero";
 

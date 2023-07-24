@@ -70,11 +70,21 @@ import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter;
 import androidx.media3.ui.PlayerView;
 
 import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.identity.BeginSignInRequest;
+import com.google.android.gms.auth.api.identity.BeginSignInResult;
+import com.google.android.gms.auth.api.identity.Identity;
+import com.google.android.gms.auth.api.identity.SignInClient;
+import com.google.android.gms.auth.api.identity.SignInCredential;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.auth.api.signin.GoogleSignInResult;
+import com.google.android.gms.common.Scopes;
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -93,6 +103,8 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.android.gms.maps.model.TileProvider;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.play.core.appupdate.AppUpdateInfo;
 import com.google.android.play.core.appupdate.AppUpdateManager;
@@ -103,6 +115,13 @@ import com.google.android.play.core.install.model.InstallStatus;
 import com.google.android.play.core.install.model.UpdateAvailability;
 import com.google.android.play.core.tasks.Task;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 import org.java_websocket.handshake.ServerHandshake;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -121,6 +140,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -142,7 +162,13 @@ import org.java_websocket.client.WebSocketClient;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener {
 
-    public static final String WSS = "wss://toor.hopto.org:443/api/v1/wsphone/";
+    private SignInClient oneTapClient;
+    private BeginSignInRequest signInRequest;
+    private static final int REQ_ONE_TAP = 2;  // Can be any integer unique to the Activity.
+    private boolean showOneTapUI = true;
+    private static final String WSS = "wss://toor.hopto.org:443/api/v1/wsphone/";
+    private static final String AUTH_URL_TOKEN = "https://toor.hopto.org/api/v1/users/login?id_token=";
+    private static final String AUTH_URL_HUKCA_KEY = "https://toor.hopto.org/api/v1/users/login?hukca_key=";
     private StorageVolume storageVolume;
     private ImageView detectionDialog;
     private GoogleMap mMap;
@@ -157,6 +183,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private PlayerView fullscreenFrame;
     private LatLng latLong = new LatLng(0, 0);
     private LatLng latLng;
+    LatLng lastKnown = new LatLng(69.9774861, 25.7147569);
     private ArrayList<LatLng> route = new ArrayList<>();
     private Polyline gpsTrack;
     private Polyline lineInBetween;
@@ -177,6 +204,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private int detected_ago;
     private int ir_active;
     private final int SOUND_EFFECT_VOLUME = 100;
+    private static final int RC_SIGN_IN = 9001;
     private static final int FLEXIBLE_APP_UPDATE_REQ_CODE = 123;
     private final Double SCREEN_SIZE_THRESHOLD = 6.9;
     private ProgressBar battery;
@@ -193,9 +221,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private String audio_key;
     private String audioFilename;
     private DatabaseHelper db;
+    private DatabaseHelperHukcaKey dbh;
     private List<MyDBHandler> sarjanumerot = new ArrayList<>();
+    private List<MyDBHandlerHukcaKey> hukcakeyt = new ArrayList<>();
     public static String srnumero;
-
+    public static String hukca_key;
     public static boolean firstTime = true;
     private boolean switcher = false;
     private boolean piilossa = true;
@@ -251,6 +281,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private AppUpdateManager appUpdateManager;
     private InstallStateUpdatedListener installStateUpdatedListener;
     private GoogleSignInAccount account;
+    private GoogleSignInClient mGoogleSignInClient;
     private GoogleApiClient mGoogleApiClient;
     private WebSocketClient webSocketClient;
     @Override
@@ -341,12 +372,61 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        oneTapClient = Identity.getSignInClient(this);
+        signInRequest = BeginSignInRequest.builder()
+                .setPasswordRequestOptions(BeginSignInRequest.PasswordRequestOptions.builder()
+                        .setSupported(true)
+                        .build())
+                .setGoogleIdTokenRequestOptions(BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
+                        .setSupported(true)
+                        // Your server's client ID, not your Android client ID.
+                        .setServerClientId(getString(R.string.server_client_id))
+                        // Only show accounts previously used to sign in.
+                        .setFilterByAuthorizedAccounts(true)
+                        .build())
+                // Automatically sign in when exactly one credential is retrieved.
+                .setAutoSelectEnabled(true)
+                .build();
+        oneTapClient.beginSignIn(signInRequest)
+                .addOnSuccessListener(this, new OnSuccessListener<BeginSignInResult>() {
+                    @Override
+                    public void onSuccess(BeginSignInResult result) {
+                        try {
+                            startIntentSenderForResult(
+                                    result.getPendingIntent().getIntentSender(), REQ_ONE_TAP,
+                                    null, 0, 0, 0);
+                        } catch (IntentSender.SendIntentException e) {
+                           e.printStackTrace();
+                        }
+                    }
+                })
+                .addOnFailureListener(this, new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        // No saved credentials found. Launch the One Tap sign-up flow, or
+                        // do nothing and continue presenting the signed-out UI.
+                        e.printStackTrace();
+                    }
+                });
+        /*String serverClientId = getString(R.string.server_client_id);
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(serverClientId)
+                //.requestScopes(new Scope(Scopes.DRIVE_APPFOLDER))
+                .requestScopes(new Scope(Scopes.EMAIL))
+                .requestScopes(new Scope(Scopes.PROFILE))
+                //.requestServerAuthCode(serverClientId)
+                .requestId()
+                .requestEmail()
+                .build();
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
+                .build();
+        mGoogleApiClient.connect();
+        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+        startActivityForResult(signInIntent, RC_SIGN_IN);
         account = GoogleSignIn.getLastSignedInAccount(this);
-        if (account == null) {
-            Toast.makeText(getApplicationContext(), "Kirjaudu Google tilille", Toast.LENGTH_LONG).show();
-            Intent intent = new Intent(MapsActivity.this, Therion.class);
-            startActivity(intent);
-        }
+//        String serverAuthCode = account.getServerAuthCode();*/
         appUpdateManager = AppUpdateManagerFactory.create(getApplicationContext());
         checkUpdate();
         installStateUpdatedListener = state -> {
@@ -367,9 +447,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             e.printStackTrace();
         }
         db = new DatabaseHelper(this);
+        dbh = new DatabaseHelperHukcaKey(this);
         sarjanumerot.addAll(db.getAllSarjanumerot());
         for (MyDBHandler sarjanumero : sarjanumerot) {
             srnumero = String.valueOf(sarjanumero.getSarjanumero());
+        }
+        hukcakeyt.addAll(dbh.getAllHuckaKeyt());
+        for (MyDBHandlerHukcaKey hukcakey : hukcakeyt) {
+            hukca_key = String.valueOf(hukcakey.getHukca_key());
         }
 
         playerView = findViewById(R.id.player);
@@ -784,6 +869,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         TileProvider wmsTileProvider = TileProviderFactory.getOsgeoWmsTileProvider();
         mMap = googleMap;
         mMap.getUiSettings().setZoomControlsEnabled(true);
+        mMap.setMyLocationEnabled(true);
+        mMap.getUiSettings().setMyLocationButtonEnabled(true);
+        mMap.getUiSettings().setCompassEnabled(true);
         mMap.addTileOverlay(new TileOverlayOptions().tileProvider(wmsTileProvider));
         mMap.setMaxZoomPreference(16);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLong));
@@ -997,7 +1085,36 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         thread.start();
 
     }
-
+    private String getAuth(String authcode, String url) throws InterruptedException {
+        final InputStream[] inputStream = new InputStream[1];
+        final String[] userEmail = new String[1];
+        String encoded = Base64.getEncoder().encodeToString((USERNAME_PASSWORD).getBytes(StandardCharsets.UTF_8));
+        Thread thread = new Thread(() -> {
+            try {
+                URL on = new URL(url + authcode);
+                HttpsURLConnection connection = (HttpsURLConnection) on.openConnection();
+                connection.setRequestMethod("POST");
+                connection.setDoOutput(true);
+                connection.setRequestProperty("Authorization", "Basic " + encoded);
+                connection.setRequestProperty("x-apikey", XAPIKEY);
+                int code = connection.getResponseCode();
+                System.out.println(code);
+                if (connection.getResponseCode() == 200) {
+                    inputStream[0] = connection.getInputStream();
+                    userEmail[0] =  this.convertStreamToString(inputStream[0]);
+                }
+                if (connection.getResponseCode() == 500) {
+                    String err = connection.getResponseMessage();
+                    System.out.println(err);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        thread.start();
+        thread.join();
+        return userEmail[0];
+    }
     private String sendAudio(String filepath, Map<String, String> params) {
         final InputStream[] inputStream = {null};
         String encoded = Base64.getEncoder().encodeToString((USERNAME_PASSWORD).getBytes(StandardCharsets.UTF_8));
@@ -1217,11 +1334,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     public void run() {
                         omaNopeus.setText(setti[0]);
                         vmatka.setText("Et:" + dist[0] + "km");
-                        if (puhelin != null) {
-                            puhelin.remove();
-                        }
-                        puhelin = mMap.addMarker(new MarkerOptions().position(latLng).title("Puhelin").icon(BitmapDescriptorFactory.fromResource(R.drawable.human_male_icon_green)));
-                        puhelin.setTag(new Float(0.0));
+                        /*if (diagonalInches >= SCREEN_SIZE_THRESHOLD) {
+                            if (puhelin != null) {
+                                puhelin.remove();
+                            }
+                            puhelin = mMap.addMarker(new MarkerOptions().position(latLng).title("Puhelin").icon(BitmapDescriptorFactory.fromResource(R.drawable.human_male_icon_green)));
+                            puhelin.setTag(new Float(0.0));
+                        }*/
                     }
                 });
 
@@ -1688,6 +1807,52 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 checkUpdate();
             }
         }
+        switch (requestCode) {
+            case REQ_ONE_TAP:
+                try {
+                    SignInCredential credential = oneTapClient.getSignInCredentialFromIntent(data);
+                    String idToken = credential.getGoogleIdToken();
+                    String username = credential.getId();
+                    String password = credential.getPassword();
+
+                    if (idToken !=  null) {
+                        hukcakeyt.addAll(dbh.getAllHuckaKeyt());
+                        for (MyDBHandlerHukcaKey hukcakey : hukcakeyt) {
+                            hukca_key = String.valueOf(hukcakey.getHukca_key());
+                        }
+                        String testiEk = getAuth(hukca_key, AUTH_URL_HUKCA_KEY);
+                        if (testiEk == null) {
+                            JSONObject jso = new JSONObject(getAuth(idToken, AUTH_URL_TOKEN));
+                            String ValiHukca_key = jso.getString("hukca_key");
+                            int i = dbh.getHukcaKeytCount();
+                            try {
+                                for (int y = 0; y < i; y++) {
+                                    dbh.deleteHukcaKeyById(y);
+                                }
+                            }
+                            catch (Exception e){
+                                e.printStackTrace();
+                            }
+                            dbh.insert(ValiHukca_key);
+                            System.out.println("Oli epäkelpo hukkis");
+                        }
+                        else {
+                            System.out.println("Käypäinen hukkis");
+                        }
+                    } else if (password != null) {
+                        // Got a saved username and password. Use them to authenticate
+                        // with your backend.
+
+                    }
+                } catch (ApiException e) {
+                    // ...
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+                break;
+        }
     }
     private void popupSnackBarForCompleteUpdate() {
         Snackbar.make(findViewById(android.R.id.content).getRootView(), "Uusi sovellus on valmiina!", Snackbar.LENGTH_INDEFINITE)
@@ -1706,14 +1871,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
     @Override
     protected void onStart() {
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestEmail()
-                .build();
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
-                .build();
-        mGoogleApiClient.connect();
         super.onStart();
+
+
+        account = GoogleSignIn.getLastSignedInAccount(this);
+        if (account == null) {
+            Toast.makeText(getApplicationContext(), "Kirjaudu Google tilille", Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(MapsActivity.this, Therion.class);
+            startActivity(intent);
+        }
     }
     private void getStreamers(String serialHash) {
         URL endpoint = null;
@@ -1803,7 +1969,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         String encoded = Base64.getEncoder().encodeToString((USERNAME_PASSWORD).getBytes(StandardCharsets.UTF_8));
         URI uri;
         try {
-            uri = new URI(WSS + srnumero);
+            uri = new URI(WSS + srnumero + "/" + hukca_key);
         } catch (URISyntaxException e) {
             e.printStackTrace();
             return;
@@ -1837,13 +2003,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onError(Exception e) {
                 showLogoWhenNoStream();
-                System.out.println("ERROR");
+                System.out.println("ERROR " + e);
             }
 
         };
 
         webSocketClient.addHeader("Authorization", "Basic " + encoded);
-        webSocketClient.addHeader("x-apikey", XAPIKEY);
+        //webSocketClient.addHeader("x-apikey", XAPIKEY);
         if (!webSocketClient.isOpen()) {
             webSocketClient.connect();
         }
@@ -1869,6 +2035,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if (first.getString("event_type").equalsIgnoreCase("interval")) {
                     o = first.getJSONObject("message");
                     latLong = new LatLng(o.getDouble("lat"), o.getDouble("lng"));
+                    if (latLong.latitude != 0.0) {
+                        lastKnown = latLong;
+                    }
                     try {
                         new Handler(Looper.getMainLooper()).post(new Runnable() {
                             @Override
@@ -1987,9 +2156,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         new Handler(Looper.getMainLooper()).post(new Runnable() {
                             @Override
                             public void run() {
-                                new Handler().postDelayed(() ->
-                                        speedAndLocation(),
-                                        2000);
+                                speedAndLocation();
                             }
                         });
                     } catch (Exception e) {
