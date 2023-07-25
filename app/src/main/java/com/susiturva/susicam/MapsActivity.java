@@ -366,41 +366,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         oneTapClient = Identity.getSignInClient(this);
-        signInRequest = BeginSignInRequest.builder()
-                .setPasswordRequestOptions(BeginSignInRequest.PasswordRequestOptions.builder()
-                        .setSupported(true)
-                        .build())
-                .setGoogleIdTokenRequestOptions(BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
-                        .setSupported(true)
-                        // Your server's client ID, not your Android client ID.
-                        .setServerClientId(getString(R.string.server_client_id))
-                        // Only show accounts previously used to sign in.
-                        .setFilterByAuthorizedAccounts(true)
-                        .build())
-                // Automatically sign in when exactly one credential is retrieved.
-                .setAutoSelectEnabled(true)
-                .build();
-        oneTapClient.beginSignIn(signInRequest)
-                .addOnSuccessListener(this, new OnSuccessListener<BeginSignInResult>() {
-                    @Override
-                    public void onSuccess(BeginSignInResult result) {
-                        try {
-                            startIntentSenderForResult(
-                                    result.getPendingIntent().getIntentSender(), REQ_ONE_TAP,
-                                    null, 0, 0, 0);
-                        } catch (IntentSender.SendIntentException e) {
-                           e.printStackTrace();
-                        }
-                    }
-                })
-                .addOnFailureListener(this, new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        // No saved credentials found. Launch the One Tap sign-up flow, or
-                        // do nothing and continue presenting the signed-out UI.
-                        e.printStackTrace();
-                    }
-                });
+        //account = GoogleSignIn.getLastSignedInAccount(this);
+        signIn();
         /*String serverClientId = getString(R.string.server_client_id);
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(serverClientId)
@@ -743,7 +710,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
                 Map<String, String> params = new HashMap<String, String>(2);
                 params.put("file", AudioSavePathInDevice);
-                String result = sendAudio(AudioSavePathInDevice, params);
+                try {
+                    String result = sendAudio(AudioSavePathInDevice, params);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
                 //playAndDeleteAudio();
                 Toast.makeText(MapsActivity.this, "Lähetetään ääntä",
                         Toast.LENGTH_LONG).show();
@@ -1108,7 +1079,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         thread.join();
         return userEmail[0];
     }
-    private String sendAudio(String filepath, Map<String, String> params) {
+    private String sendAudio(String filepath, Map<String, String> params) throws InterruptedException {
         final InputStream[] inputStream = {null};
         String encoded = Base64.getEncoder().encodeToString((USERNAME_PASSWORD).getBytes(StandardCharsets.UTF_8));
         String boundary = "*****" + Long.toString(System.currentTimeMillis()) + "*****";
@@ -1205,6 +1176,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
         thread.start();
+        thread.join();
         return audioFilename;
     }
 
@@ -1317,6 +1289,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 };
                 Thread slThread = new Thread(slRunner);
                 slThread.start();
+                try {
+                    slThread.join();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
                 try {
                     slThread.join();
                 } catch (InterruptedException e) {
@@ -1809,29 +1786,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     String password = credential.getPassword();
 
                     if (idToken !=  null) {
-                        hukcakeyt.addAll(dbh.getAllHuckaKeyt());
-                        for (MyDBHandlerHukcaKey hukcakey : hukcakeyt) {
-                            hukca_key = String.valueOf(hukcakey.getHukca_key());
-                        }
-                        String testiEk = getAuth(hukca_key, AUTH_URL_HUKCA_KEY);
-                        if (testiEk == null) {
-                            JSONObject jso = new JSONObject(getAuth(idToken, AUTH_URL_TOKEN));
-                            String ValiHukca_key = jso.getString("hukca_key");
-                            int i = dbh.getHukcaKeytCount();
-                            try {
-                                for (int y = 0; y < i; y++) {
-                                    dbh.deleteHukcaKeyById(y);
-                                }
-                            }
-                            catch (Exception e){
-                                e.printStackTrace();
-                            }
-                            dbh.insert(ValiHukca_key);
-                            System.out.println("Oli epäkelpo hukkis");
-                        }
-                        else {
-                            System.out.println("Käypäinen hukkis");
-                        }
+                        setHukcaKey(idToken);
                     } else if (password != null) {
                         // Got a saved username and password. Use them to authenticate
                         // with your backend.
@@ -1865,10 +1820,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onStart() {
         super.onStart();
-
-
-        /*account = GoogleSignIn.getLastSignedInAccount(this);
-        if (account == null) {
+//        account = GoogleSignIn.getLastSignedInAccount(this);
+        /*if (account == null) {
             Toast.makeText(getApplicationContext(), "Kirjaudu Google tilille", Toast.LENGTH_LONG).show();
             Intent intent = new Intent(MapsActivity.this, Therion.class);
             startActivity(intent);
@@ -2180,6 +2133,68 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+    private void signIn() {
+        signInRequest = BeginSignInRequest.builder()
+                .setPasswordRequestOptions(BeginSignInRequest.PasswordRequestOptions.builder()
+                        .setSupported(true)
+                        .build())
+                .setGoogleIdTokenRequestOptions(BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
+                        .setSupported(true)
+                        // Your server's client ID, not your Android client ID.
+                        .setServerClientId(getString(R.string.server_client_id))
+                        // Only show accounts previously used to sign in.
+                        .setFilterByAuthorizedAccounts(true)
+                        .build())
+                // Automatically sign in when exactly one credential is retrieved.
+                .setAutoSelectEnabled(true)
+                .build();
+        oneTapClient.beginSignIn(signInRequest)
+                .addOnSuccessListener(this, new OnSuccessListener<BeginSignInResult>() {
+                    @Override
+                    public void onSuccess(BeginSignInResult result) {
+                        try {
+                            startIntentSenderForResult(
+                                    result.getPendingIntent().getIntentSender(), REQ_ONE_TAP,
+                                    null, 0, 0, 0);
+                        } catch (IntentSender.SendIntentException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                })
+                .addOnFailureListener(this, new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        // No saved credentials found. Launch the One Tap sign-up flow, or
+                        // do nothing and continue presenting the signed-out UI.
+                        e.printStackTrace();
+                    }
+                });
+    }
+    private void setHukcaKey(String idToken) throws InterruptedException, JSONException {
+        hukcakeyt.addAll(dbh.getAllHuckaKeyt());
+        for (MyDBHandlerHukcaKey hukcakey : hukcakeyt) {
+            hukca_key = String.valueOf(hukcakey.getHukca_key());
+        }
+        String testiEk = getAuth(hukca_key, AUTH_URL_HUKCA_KEY);
+        if (testiEk == null) {
+            JSONObject jso = new JSONObject(getAuth(idToken, AUTH_URL_TOKEN));
+            String ValiHukca_key = jso.getString("hukca_key");
+            int i = dbh.getHukcaKeytCount();
+            try {
+                for (int y = 0; y < i; y++) {
+                    dbh.deleteHukcaKeyById(y);
+                }
+            }
+            catch (Exception e){
+                e.printStackTrace();
+            }
+            dbh.insert(ValiHukca_key);
+            System.out.println("Oli epäkelpo hukkis");
+        }
+        else {
+            System.out.println("Käypäinen hukkis");
         }
     }
 }
