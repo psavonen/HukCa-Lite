@@ -28,6 +28,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.StrictMode;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.provider.MediaStore;
@@ -307,16 +308,35 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 massamuisti();
                 return true;
             case R.id.kirjauduulos:
-                Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(
-                        new ResultCallback<Status>() {
+                AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+                builder.setCancelable(true);
+                builder.setTitle("Varmistus");
+                builder.setMessage("Haluatko varmasti kirjautua ulos Google tililtä.");
+                builder.setPositiveButton("Hyväksy",
+                        new DialogInterface.OnClickListener() {
                             @Override
-                            public void onResult(Status status) {
-                                // ...
-                                Toast.makeText(getApplicationContext(), "Kirjauduttu ulos", Toast.LENGTH_SHORT).show();
-                                Intent i = new Intent(getApplicationContext(), MapsActivity.class);
-                                startActivity(i);
+                            public void onClick(DialogInterface dialog, int which) {
+                                Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(
+                                        new ResultCallback<Status>() {
+                                            @Override
+                                            public void onResult(Status status) {
+                                                // ...
+                                                Toast.makeText(getApplicationContext(), "Kirjauduttu ulos", Toast.LENGTH_SHORT).show();
+                                                Intent i = new Intent(getApplicationContext(), MapsActivity.class);
+                                                startActivity(i);
+                                            }
+                                        });
                             }
                         });
+                builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                    }
+                });
+
+                AlertDialog dialog = builder.create();
+                dialog.show();
+
                 return true;
             case R.id.katsoja:
                 Intent katsojaIntent = new Intent(com.susiturva.susicam.MapsActivity.this, WatchersActivity.class);
@@ -345,6 +365,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @OptIn(markerClass = UnstableApi.class)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        /*StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
+                .detectDiskReads()
+                .detectDiskWrites()
+                .detectNetwork()   // or .detectAll() for all detectable problems
+                .penaltyLog()
+                .build());
+        StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                .detectLeakedSqlLiteObjects()
+                .detectLeakedClosableObjects()
+                .penaltyLog()
+                .penaltyDeath()
+                .build());*/
         super.onCreate(savedInstanceState);
 //        getWindow().setFlags(
 //                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
@@ -408,11 +440,38 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         db = new DatabaseHelper(this);
         dbh = new DatabaseHelperHukcaKey(this);
-        sarjanumerot.addAll(db.getAllSarjanumerot());
+        Runnable snRunner = new Runnable() {
+            @Override
+            public void run() {
+                sarjanumerot.addAll(db.getAllSarjanumerot());
+                db.close();
+            }
+        };
+        Thread snThread = new Thread(snRunner);
+        snThread.start();
+        try {
+            snThread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         for (MyDBHandler sarjanumero : sarjanumerot) {
             srnumero = String.valueOf(sarjanumero.getSarjanumero());
         }
-        hukcakeyt.addAll(dbh.getAllHuckaKeyt());
+        Runnable hukcaRunner = new Runnable() {
+            @Override
+            public void run() {
+                hukcakeyt.addAll(dbh.getAllHuckaKeyt());
+                dbh.close();
+            }
+        };
+        Thread hukcaThread = new Thread(hukcaRunner);
+        hukcaThread.start();
+        try {
+            hukcaThread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
         for (MyDBHandlerHukcaKey hukcakey : hukcakeyt) {
             hukca_key = String.valueOf(hukcakey.getHukca_key());
         }
@@ -1550,13 +1609,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (detected_object != null && detected_id != checkId && detected_ago < 30 && detected_object != "null") {
             checkId = detected_id;
             detection.setVisibility(View.VISIBLE);
+            final MediaPlayer mp = MediaPlayer.create(MapsActivity.this, R.raw.red_alert);
             Thread thread = new Thread(() -> {
                 try {
-                    final MediaPlayer mp = MediaPlayer.create(MapsActivity.this, R.raw.beep);
                     for (int i = 0; i < 2; i++) {
                         mp.start();
                         try {
                             Thread.sleep(2000);
+                            mp.release();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -2177,6 +2237,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         for (MyDBHandlerHukcaKey hukcakey : hukcakeyt) {
             hukca_key = String.valueOf(hukcakey.getHukca_key());
         }
+
         String testiEk = getAuth(hukca_key, AUTH_URL_HUKCA_KEY);
         if (testiEk == null) {
             JSONObject jso = new JSONObject(getAuth(idToken, AUTH_URL_TOKEN));
@@ -2191,6 +2252,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 e.printStackTrace();
             }
             dbh.insert(ValiHukca_key);
+            dbh.close();
             System.out.println("Oli epäkelpo hukkis");
         }
         else {

@@ -92,6 +92,7 @@ public class Therion extends Activity {
             ActivityCompat.requestPermissions(this, requiredPermissions, 0);
         }
         List<MyDBHandler> srnumerot = db.getAllSarjanumerot();
+        db.close();
         String srnumero = "";
         for(final MyDBHandler sarjanumero : srnumerot) {
             srnumero = String.valueOf(sarjanumero.getSarjanumero());
@@ -140,7 +141,7 @@ public class Therion extends Activity {
                 }
 
                 db.insert(perse);
-
+                db.close();
 
                 Intent intent = new Intent(Therion.this, MapsActivity.class);
                 /*account = GoogleSignIn.getLastSignedInAccount(Therion.this);
@@ -250,6 +251,7 @@ public class Therion extends Activity {
                             e.printStackTrace();
                         }
                         dbh.insert(hukca_key);
+                        dbh.close();
                     } else if (password != null) {
                         // Got a saved username and password. Use them to authenticate
                         // with your backend.

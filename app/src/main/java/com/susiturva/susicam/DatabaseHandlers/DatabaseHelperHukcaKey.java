@@ -94,6 +94,7 @@ public class DatabaseHelperHukcaKey extends SQLiteOpenHelper{
                 hukca_keyt.add(hukca_key);
             } while (cursor.moveToNext());
         }
+        cursor.close();
         db.close();
         return hukca_keyt;
 

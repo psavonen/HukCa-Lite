@@ -86,6 +86,7 @@ public class DatabaseHelper extends SQLiteOpenHelper{
                 sarjis = sarja.getSarjanumero();
             } while (cursor.moveToNext());
         }
+        cursor.close();
         db.close();
         return sarjis;
     }
@@ -112,6 +113,7 @@ public class DatabaseHelper extends SQLiteOpenHelper{
                 sarjanumerot.add(sarjanumero);
             } while (cursor.moveToNext());
         }
+        cursor.close();
         db.close();
         return sarjanumerot;
 
