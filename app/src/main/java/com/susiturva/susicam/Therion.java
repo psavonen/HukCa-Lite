@@ -98,11 +98,8 @@ public class Therion extends Activity {
             srnumero = String.valueOf(sarjanumero.getSarjanumero());
         }
         sarjanumeroInput.setText(srnumero);
-        oneTapClient = Identity.getSignInClient(this);
-        account = GoogleSignIn.getLastSignedInAccount(this);
-        if (account == null) {
-           signIn();
-        }
+        //oneTapClient = Identity.getSignInClient(this);
+        //account = GoogleSignIn.getLastSignedInAccount(this);
         /*validateServerClientID();
         String serverClientId = getString(R.string.server_client_id);
         *//*gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)

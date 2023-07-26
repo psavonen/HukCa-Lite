@@ -1984,8 +1984,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         webSocketClient = new WebSocketClient(uri) {
             @Override
             public void onOpen(ServerHandshake serverHandshake) {
-                signIn();
-
                 System.out.println("SUCCESS");
             }
 
