@@ -1984,6 +1984,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         webSocketClient = new WebSocketClient(uri) {
             @Override
             public void onOpen(ServerHandshake serverHandshake) {
+                signIn();
+
                 System.out.println("SUCCESS");
             }
 
@@ -2205,7 +2207,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         // Your server's client ID, not your Android client ID.
                         .setServerClientId(getString(R.string.server_client_id))
                         // Only show accounts previously used to sign in.
-                        .setFilterByAuthorizedAccounts(true)
+                        .setFilterByAuthorizedAccounts(false)
                         .build())
                 // Automatically sign in when exactly one credential is retrieved.
                 .setAutoSelectEnabled(true)
@@ -2231,6 +2233,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         e.printStackTrace();
                     }
                 });
+
     }
     private void setHukcaKey(String idToken) throws InterruptedException, JSONException {
         hukcakeyt.addAll(dbh.getAllHuckaKeyt());
