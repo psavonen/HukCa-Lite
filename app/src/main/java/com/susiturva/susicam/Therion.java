@@ -14,21 +14,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 
-import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.identity.BeginSignInRequest;
 import com.google.android.gms.auth.api.identity.BeginSignInResult;
-import com.google.android.gms.auth.api.identity.Identity;
 import com.google.android.gms.auth.api.identity.SignInClient;
 import com.google.android.gms.auth.api.identity.SignInCredential;
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.auth.api.signin.GoogleSignInResult;
-import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -76,8 +70,6 @@ public class Therion extends Activity {
         db = new DatabaseHelper(this);
         dbh = new DatabaseHelperHukcaKey(this);
         sarjanumeroInput = findViewById(R.id.sarjanumero);
-        SignInButton signInButton = findViewById(R.id.sign_in_button);
-        signInButton.setSize(SignInButton.SIZE_STANDARD);
         tallenna = findViewById(R.id.tallenna);
         int PERMISSION_ALL = 1;
         String[] PERMISSIONS = {
@@ -115,13 +107,7 @@ public class Therion extends Activity {
         mGoogleApi =new GoogleApiClient.Builder(this)
                 .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
                         .build();*/
-       findViewById(R.id.sign_in_button).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent=Auth.GoogleSignInApi.getSignInIntent(mGoogleApi);
-                startActivityForResult(intent,RC_SIGN_IN);
-            }
-        });
+
         tallenna.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -204,29 +190,13 @@ public class Therion extends Activity {
     @Override
     public void onStart() {
         super.onStart();
-        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
-        updateUI(account);
+
     }
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         int code = requestCode;
-        if (requestCode == RC_SIGN_IN) {
-            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
-            if(result.isSuccess())
-            {
-                GoogleSignInAccount account = result.getSignInAccount();
-                Toast.makeText(this,"Kirjautuminen onnistui: " + account.getDisplayName(),Toast.LENGTH_LONG).show();
-                String toukka = account.getIdToken();
-                String toukka2 = account.getServerAuthCode();
 
-                updateUI(account);
-            }
-            else
-            {
-                Toast.makeText(this,"Kirjautuminen epäonnistui.",Toast.LENGTH_LONG).show();
-            }
-        }
         switch (requestCode) {
             case REQ_ONE_TAP:
                 try {
@@ -264,18 +234,8 @@ public class Therion extends Activity {
                 break;
         }
     }
-    private void handleSignInResult(GoogleSignInResult completedTask) {
-        GoogleSignInAccount account = completedTask.getSignInAccount();
-        updateUI(account);
 
-    }
-    private void updateUI(@Nullable GoogleSignInAccount account) {
-        if (account != null) {
-            findViewById(R.id.sign_in_button).setVisibility(View.GONE);
-        } else {
-            findViewById(R.id.sign_in_button).setVisibility(View.VISIBLE);
-        }
-    }
+
     private void validateServerClientID() {
         String serverClientId = getString(R.string.server_client_id);
         String suffix = ".apps.googleusercontent.com";

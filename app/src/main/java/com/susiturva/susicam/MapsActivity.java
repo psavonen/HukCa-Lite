@@ -1,5 +1,8 @@
 package com.susiturva.susicam;
 
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -28,7 +31,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.StrictMode;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.provider.MediaStore;
@@ -54,7 +56,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.res.ResourcesCompat;
-
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
@@ -68,19 +69,15 @@ import androidx.media3.exoplayer.upstream.DefaultAllocator;
 import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter;
 import androidx.media3.ui.PlayerView;
 
-import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.identity.BeginSignInRequest;
 import com.google.android.gms.auth.api.identity.BeginSignInResult;
 import com.google.android.gms.auth.api.identity.Identity;
 import com.google.android.gms.auth.api.identity.SignInClient;
 import com.google.android.gms.auth.api.identity.SignInCredential;
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Status;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -109,11 +106,15 @@ import com.google.android.play.core.install.model.AppUpdateType;
 import com.google.android.play.core.install.model.InstallStatus;
 import com.google.android.play.core.install.model.UpdateAvailability;
 import com.google.android.play.core.tasks.Task;
+import com.neovisionaries.ws.client.WebSocket;
+import com.neovisionaries.ws.client.WebSocketAdapter;
+import com.neovisionaries.ws.client.WebSocketFactory;
 import com.susiturva.susicam.DatabaseHandlers.DatabaseHelper;
 import com.susiturva.susicam.DatabaseHandlers.DatabaseHelperHukcaKey;
 import com.susiturva.susicam.DatabaseHandlers.MyDBHandler;
 import com.susiturva.susicam.DatabaseHandlers.MyDBHandlerHukcaKey;
 
+import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -144,12 +145,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.net.ssl.HttpsURLConnection;
-
-import org.java_websocket.client.WebSocketClient;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener {
 
@@ -307,37 +307,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             case R.id.massamuisti:
                 massamuisti();
                 return true;
-            case R.id.kirjauduulos:
-                AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
-                builder.setCancelable(true);
-                builder.setTitle("Varmistus");
-                builder.setMessage("Haluatko varmasti kirjautua ulos Google tililtä.");
-                builder.setPositiveButton("Hyväksy",
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(
-                                        new ResultCallback<Status>() {
-                                            @Override
-                                            public void onResult(Status status) {
-                                                // ...
-                                                Toast.makeText(getApplicationContext(), "Kirjauduttu ulos", Toast.LENGTH_SHORT).show();
-                                                Intent i = new Intent(getApplicationContext(), MapsActivity.class);
-                                                startActivity(i);
-                                            }
-                                        });
-                            }
-                        });
-                builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                    }
-                });
-
-                AlertDialog dialog = builder.create();
-                dialog.show();
-
-                return true;
             case R.id.katsoja:
                 Intent katsojaIntent = new Intent(com.susiturva.susicam.MapsActivity.this, WatchersActivity.class);
                 startActivity(katsojaIntent);
@@ -365,18 +334,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @OptIn(markerClass = UnstableApi.class)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        /*StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
-                .detectDiskReads()
-                .detectDiskWrites()
-                .detectNetwork()   // or .detectAll() for all detectable problems
-                .penaltyLog()
-                .build());
-        StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
-                .detectLeakedSqlLiteObjects()
-                .detectLeakedClosableObjects()
-                .penaltyLog()
-                .penaltyDeath()
-                .build());*/
+        /**/
         super.onCreate(savedInstanceState);
 //        getWindow().setFlags(
 //                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
@@ -476,6 +434,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             hukca_key = String.valueOf(hukcakey.getHukca_key());
         }
 
+
         playerView = findViewById(R.id.player);
         playerView.hideController();
         playerView.setShowBuffering(PlayerView.SHOW_BUFFERING_ALWAYS);
@@ -527,9 +486,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
-                        createWebSocketClient();
+                        try {
+                            createWebSocketClient();
+                        } catch (URISyntaxException e) {
+                            throw new RuntimeException(e);
+                        }
                     },
-                    2000);
+                    6000);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1084,7 +1047,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
   /*      player.release();
         player2.release();
         playerAudio.release();*/
-        webSocketClient.close();
+
     }
 
     private void setControl(String url) {
@@ -1971,7 +1934,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         double y = Math.pow(mHeightPixels / dm.ydpi, 2);
         return Math.sqrt(x + y);
     }
-    private void createWebSocketClient() {
+    private void createWebSocketClient() throws URISyntaxException {
         String encoded = Base64.getEncoder().encodeToString((USERNAME_PASSWORD).getBytes(StandardCharsets.UTF_8));
         URI uri;
         try {
@@ -1980,7 +1943,31 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             e.printStackTrace();
             return;
         }
+        WebSocket ws = null;
+        WebSocketFactory factory = new WebSocketFactory().setConnectionTimeout(5000);
 
+        // Create a WebSocket. The timeout value set above is used.
+        try {
+            ws = factory.createSocket(uri);
+
+            ws.addListener(new WebSocketAdapter() {
+                @Override
+                public void onTextMessage(WebSocket websocket, String message) throws Exception {
+                    insideWebSocket(message);
+                }
+            });
+            ws.addHeader("Authorization", "Basic " + encoded);
+            ws.connectAsynchronously();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        /*socket.on("route", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                // ...
+            }
+        });
         webSocketClient = new WebSocketClient(uri) {
             @Override
             public void onOpen(ServerHandshake serverHandshake) {
@@ -2018,7 +2005,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         //webSocketClient.addHeader("x-apikey", XAPIKEY);
         if (!webSocketClient.isOpen()) {
             webSocketClient.connect();
-        }
+        }*/
     }
     private void recordingStatus() throws InterruptedException {
         if (recordingStatus == 0) {
@@ -2260,6 +2247,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             System.out.println("Käypäinen hukkis");
         }
     }
+
+
 }
 
 
