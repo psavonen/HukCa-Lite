@@ -1334,9 +1334,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         float distance = results[0] / 1000;
                         dist[0] = (double) Math.round(distance * 100d) / 100d;
 
-
                 runOnUiThread(new Runnable() {
-
                     @Override
                     public void run() {
                         omaNopeus.setText(setti[0]);
@@ -1365,11 +1363,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     pmarker.remove();
                 }
                 pmarker = mMap.addMarker(options);*/
-
-                if (lineInBetween != null)  {
-                    lineInBetween.remove();
-                }
-                drawLineInBetween(latLng, latLong );
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (lineInBetween != null)  {
+                            lineInBetween.remove();
+                        }
+                        drawLineInBetween(latLng, latLong );
+                    }
+                });
             };
 
             LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
@@ -1811,15 +1813,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 try {
                     SignInCredential credential = oneTapClient.getSignInCredentialFromIntent(data);
                     String idToken = credential.getGoogleIdToken();
-                    String username = credential.getId();
-                    String password = credential.getPassword();
-
                     if (idToken !=  null) {
                         setHukcaKey(idToken);
-                    } else if (password != null) {
-                        // Got a saved username and password. Use them to authenticate
-                        // with your backend.
-
                     }
                 } catch (ApiException e) {
                     // ...
