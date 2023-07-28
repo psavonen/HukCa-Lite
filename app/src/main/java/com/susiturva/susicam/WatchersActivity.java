@@ -1,38 +1,29 @@
 package com.susiturva.susicam;
 
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Typeface;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
-import android.widget.TableLayout;
-import android.widget.TableRow;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.susiturva.susicam.DatabaseHandlers.DatabaseHelper;
-import com.susiturva.susicam.DatabaseHandlers.DatabaseHelperHukcaKey;
-import com.susiturva.susicam.DatabaseHandlers.MyDBHandler;
-import com.susiturva.susicam.DatabaseHandlers.MyDBHandlerHukcaKey;
+import com.susiturva.susicam.databasehandlers.DatabaseHelper;
+import com.susiturva.susicam.databasehandlers.DatabaseHelperHukcaKey;
+import com.susiturva.susicam.databasehandlers.MyDBHandler;
+import com.susiturva.susicam.databasehandlers.MyDBHandlerHukcaKey;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -40,7 +31,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;

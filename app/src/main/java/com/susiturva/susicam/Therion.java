@@ -27,9 +27,9 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.susiturva.susicam.DatabaseHandlers.DatabaseHelper;
-import com.susiturva.susicam.DatabaseHandlers.DatabaseHelperHukcaKey;
-import com.susiturva.susicam.DatabaseHandlers.MyDBHandler;
+import com.susiturva.susicam.databasehandlers.DatabaseHelper;
+import com.susiturva.susicam.databasehandlers.DatabaseHelperHukcaKey;
+import com.susiturva.susicam.databasehandlers.MyDBHandler;
 
 import org.json.JSONException;
 import org.json.JSONObject;

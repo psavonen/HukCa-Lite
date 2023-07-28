@@ -1,14 +1,14 @@
 package com.susiturva.susicam;
 
-import static java.util.Collections.singletonList;
-import static java.util.Collections.singletonMap;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -30,7 +30,9 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
+import android.os.StrictMode;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.provider.MediaStore;
@@ -55,7 +57,9 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
@@ -109,13 +113,13 @@ import com.google.android.play.core.tasks.Task;
 import com.neovisionaries.ws.client.WebSocket;
 import com.neovisionaries.ws.client.WebSocketAdapter;
 import com.neovisionaries.ws.client.WebSocketFactory;
-import com.susiturva.susicam.DatabaseHandlers.DatabaseHelper;
-import com.susiturva.susicam.DatabaseHandlers.DatabaseHelperHukcaKey;
-import com.susiturva.susicam.DatabaseHandlers.MyDBHandler;
-import com.susiturva.susicam.DatabaseHandlers.MyDBHandlerHukcaKey;
+import com.susiturva.susicam.databasehandlers.DatabaseHelper;
+import com.susiturva.susicam.databasehandlers.DatabaseHelperHukcaKey;
+import com.susiturva.susicam.databasehandlers.MyDBHandler;
+import com.susiturva.susicam.databasehandlers.MyDBHandlerHukcaKey;
+import com.susiturva.susicam.service.WebsocketService;
 
 import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.handshake.ServerHandshake;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -145,7 +149,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -178,8 +181,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ArrayList<LatLng> route = new ArrayList<>();
     private Polyline gpsTrack;
     private Polyline lineInBetween;
-    private Double alt;
-    private Double speed;
+    private int alt;
+    private int speed;
     private Double diagonalInches;
     private static final double EARTH_RADIUS = 6378100.0;
 
@@ -215,9 +218,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private DatabaseHelperHukcaKey dbh;
     private List<MyDBHandler> sarjanumerot = new ArrayList<>();
     private List<MyDBHandlerHukcaKey> hukcakeyt = new ArrayList<>();
-    public static String srnumero;
-    public static String hukca_key;
-    public static boolean firstTime = true;
+    private String srnumero;
+    private String hukca_key;
+    private boolean firstTime = true;
     private boolean switcher = false;
     private boolean piilossa = true;
     private boolean sound = false;
@@ -275,6 +278,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private GoogleSignInClient mGoogleSignInClient;
     private GoogleApiClient mGoogleApiClient;
     private WebSocketClient webSocketClient;
+    private Looper looper;
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -334,7 +338,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @OptIn(markerClass = UnstableApi.class)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        /**/
+        /*StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
+                .detectDiskReads()
+                .detectDiskWrites()
+                .detectNetwork()   // or .detectAll() for all detectable problems
+                .penaltyLog()
+                .build());
+        StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                .detectLeakedSqlLiteObjects()
+                .detectLeakedClosableObjects()
+                .penaltyLog()
+                .penaltyDeath()
+                .build());*/
         super.onCreate(savedInstanceState);
 //        getWindow().setFlags(
 //                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
@@ -352,7 +367,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         );
 
         setContentView(R.layout.activity_maps);
-
+       /* if (!isMyServiceRunning(WebsocketService.class)) {
+            startService();
+        }*/
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         oneTapClient = Identity.getSignInClient(this);
@@ -434,7 +451,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             hukca_key = String.valueOf(hukcakey.getHukca_key());
         }
 
-
         playerView = findViewById(R.id.player);
         playerView.hideController();
         playerView.setShowBuffering(PlayerView.SHOW_BUFFERING_ALWAYS);
@@ -486,11 +502,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
-                        try {
-                            createWebSocketClient();
-                        } catch (URISyntaxException e) {
-                            throw new RuntimeException(e);
-                        }
+                        //createWebSocketClient();
                     },
                     6000);
         } catch (Exception e) {
@@ -619,6 +631,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         keskitaPuhelimeen.setOnClickListener(v -> {
             try {
                 if (latLng != null) {
+
                     new Handler().postDelayed(() -> {
                         new Handler().postDelayed(() ->
                                 mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng)), 100);
@@ -746,7 +759,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
         aani.setTooltipText(getString(R.string.aani_tooltip));
         try {
-            playerAudio.prepare();
+            if (playerAudio != null) {
+                playerAudio.prepare();
+            }
         } catch(Exception e) {
             e.printStackTrace();
         }
@@ -831,7 +846,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             fullscreenBack.setVisibility(View.INVISIBLE);
             fullscreenBackSwitch = false;
         });
-
+        checkGPSandNetwork();
+        try {
+            speedAndLocation();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -840,6 +860,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     protected void onResume() {
         super.onResume();
+        if (!isMyServiceRunning(WebsocketService.class)) {
+            startService();
+        }
         try {
             new Handler().postDelayed(() ->
                             exoplayerAudio(),
@@ -847,6 +870,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         } catch (Exception e) {
             e.printStackTrace();
         }
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter("LocationUpdates"));
+        LocalBroadcastManager.getInstance(this).registerReceiver(bMessageReceiver, new IntentFilter("Route"));
     }
 
     @SuppressLint("MissingPermission")
@@ -1044,6 +1069,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onDestroy() {
         super.onDestroy();
+        stopService();
   /*      player.release();
         player2.release();
         playerAudio.release();*/
@@ -1286,6 +1312,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @SuppressLint("MissingPermission")
     public void speedAndLocation() {
+        HandlerThread handlerThread = new HandlerThread("speedAndLocationThread");
+        handlerThread.start();
+        looper = handlerThread.getLooper();
         try {
             LocationListener locationListener = location -> {
                 latLng = new LatLng(location.getLatitude(), location.getLongitude());
@@ -1294,12 +1323,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 final double[] currentSpeed = {location.getSpeed()};
                 final String[] setti = new String[1];
                 final double[] dist = new double[1];
-                Runnable slRunner = new Runnable() {
-                    @Override
-                    public void run() {
+
                         currentSpeed[0] = (double) (currentSpeed[0] * 3.6);
                         currentSpeed[0] = (double) Math.round(currentSpeed[0] * 1d) / 1d;
-                        setti[0] = currentSpeed[0] + "  ";
+                        setti[0] = (int)currentSpeed[0] + "  ";
                         float[] results = new float[1];
                         double lat = latLong.latitude;
                         double lng = latLong.longitude;
@@ -1307,25 +1334,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         float distance = results[0] / 1000;
                         dist[0] = (double) Math.round(distance * 100d) / 100d;
 
-                    }
-                };
-                Thread slThread = new Thread(slRunner);
-                slThread.start();
-                try {
-                    slThread.join();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                try {
-                    slThread.join();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                new Handler(Looper.getMainLooper()).post(new Runnable() {
+
+                runOnUiThread(new Runnable() {
+
                     @Override
                     public void run() {
                         omaNopeus.setText(setti[0]);
                         vmatka.setText("Et:" + dist[0] + "km");
+                    }
+                });
+
                         /*if (diagonalInches >= SCREEN_SIZE_THRESHOLD) {
                             if (puhelin != null) {
                                 puhelin.remove();
@@ -1333,8 +1351,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             puhelin = mMap.addMarker(new MarkerOptions().position(latLng).title("Puhelin").icon(BitmapDescriptorFactory.fromResource(R.drawable.human_male_icon_green)));
                             puhelin.setTag(new Float(0.0));
                         }*/
-                    }
-                });
+
 
                /* MarkerOptions options = new MarkerOptions();
                 options.position(getCoords(latLng));
@@ -1357,20 +1374,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
             try {
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_TIME, MIN_DIST, locationListener);
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_TIME, MIN_DIST, locationListener, looper);
             } catch (SecurityException e) {
                 e.printStackTrace();
             }
         } catch (Exception e) {
             e.printStackTrace();
-            new Handler(Looper.getMainLooper()).post(new Runnable() {
-                @Override
-                public void run() {
+
                     Toast.makeText(MapsActivity.this,
                             "KYTKE PAIKANNUS PÄÄLLE",
                             Toast.LENGTH_LONG).show();
-                }
-            });
+
 
         }
     }
@@ -1484,30 +1498,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         try {
             //MapsActivity.onOff.setText("OFF | ");
             float erotus = sinceMidnight - millis;
-            new Handler(Looper.getMainLooper()).post(new Runnable() {
-                @Override
-                public void run() {
+
                     onOff.setText("ON  | ");
-                }
-            });
+
             huckaOn = true;
             stopTimer();
             startTimer();
             if (erotus > 6000) {
-                new Handler(Looper.getMainLooper()).post(new Runnable() {
-                    @Override
-                    public void run() {
+
                         onOff.setText("OFF  | ");
-                    }
-                });
+
                 huckaOn = false;
             } else {
-                new Handler(Looper.getMainLooper()).post(new Runnable() {
-                    @Override
-                    public void run() {
+
                         onOff.setText("ON  | ");
-                    }
-                });
+
                 huckaOn = true;
                 //MapsActivity.firstTime = true;
             }
@@ -1528,7 +1533,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         timer = new Timer();
         timerTask = new TimerTask() {
             public void run() {
-                handler.post(new Runnable() {
+                runOnUiThread(new Runnable() {
+                    @Override
                     public void run() {
                         MapsActivity.onOff.setText("OFF | ");
                     }
@@ -1934,79 +1940,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         double y = Math.pow(mHeightPixels / dm.ydpi, 2);
         return Math.sqrt(x + y);
     }
-    private void createWebSocketClient() throws URISyntaxException {
-        String encoded = Base64.getEncoder().encodeToString((USERNAME_PASSWORD).getBytes(StandardCharsets.UTF_8));
-        URI uri;
-        try {
-            uri = new URI(WSS + srnumero + "/" + hukca_key);
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-            return;
-        }
-        WebSocket ws = null;
-        WebSocketFactory factory = new WebSocketFactory().setConnectionTimeout(5000);
 
-        // Create a WebSocket. The timeout value set above is used.
-        try {
-            ws = factory.createSocket(uri);
-
-            ws.addListener(new WebSocketAdapter() {
-                @Override
-                public void onTextMessage(WebSocket websocket, String message) throws Exception {
-                    insideWebSocket(message);
-                }
-            });
-            ws.addHeader("Authorization", "Basic " + encoded);
-            ws.connectAsynchronously();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        /*socket.on("route", new Emitter.Listener() {
-            @Override
-            public void call(Object... args) {
-                // ...
-            }
-        });
-        webSocketClient = new WebSocketClient(uri) {
-            @Override
-            public void onOpen(ServerHandshake serverHandshake) {
-                System.out.println("SUCCESS");
-            }
-
-            @Override
-            public void onMessage(String s) {
-                final String message = s;
-              Runnable wsRunner = new Runnable() {
-                    @Override
-                    public void run() {
-                        insideWebSocket(message);
-                    }
-                };
-                Thread wsThread = new Thread(wsRunner);
-                wsThread.start();
-            }
-
-            @Override
-            public void onClose(int i, String s, boolean b) {
-                showLogoWhenNoStream();
-                System.out.println("CLOSED");
-            }
-
-            @Override
-            public void onError(Exception e) {
-                showLogoWhenNoStream();
-                System.out.println("ERROR " + e);
-            }
-
-        };
-
-        webSocketClient.addHeader("Authorization", "Basic " + encoded);
-        //webSocketClient.addHeader("x-apikey", XAPIKEY);
-        if (!webSocketClient.isOpen()) {
-            webSocketClient.connect();
-        }*/
-    }
     private void recordingStatus() throws InterruptedException {
         if (recordingStatus == 0) {
             recordVideo.setImageResource(R.drawable.record_video);
@@ -2015,173 +1949,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
     @SuppressLint("SetTextI18n")
-    private void insideWebSocket(String s) {
-        JSONObject first = new JSONObject();
-        JSONObject o = new JSONObject();
-        JSONObject ob = new JSONObject();
-        try {
-            first = new JSONObject(s);
-        } catch (JSONException e) {
-        }
-        try {
-            if (!first.isNull("event_type")) {
-                if (first.getString("event_type").equalsIgnoreCase("interval")) {
-                    o = first.getJSONObject("message");
-                    latLong = new LatLng(o.getDouble("lat"), o.getDouble("lng"));
-                    if (latLong.latitude != 0.0) {
-                        lastKnown = latLong;
-                    }
-                    try {
-                        new Handler(Looper.getMainLooper()).post(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (firstTime) {
-                                    new Handler().postDelayed(() -> {
-                                        new Handler().postDelayed(() ->
-                                                mMap.moveCamera(CameraUpdateFactory.newLatLng(latLong)), 100);
-                                        mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
-                                        firstTime = false;
-                                    }, 100);
-                                }
-                                if (marker != null) {
-                                    marker.remove();
-                                    marker = null;
-                                }
-                                if (marker == null) {
-                                    marker = mMap.addMarker(new MarkerOptions().title("koira").position(latLong).icon(BitmapDescriptorFactory.fromResource(R.drawable.dog_icon_red_24)));
-                                }
-                            }
-                        });
 
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    speed = o.getDouble("speed");
-                    bat_soc = o.getInt("bat_soc");
-                    last_update = o.getString("last_update");
-                    active_video = o.getInt("active_video");
-                    new Handler(Looper.getMainLooper()).post(new Runnable() {
-                        @Override
-                        public void run() {
-//                            if (active_video == 1 && !exoplayerPlaying(player)) {
-//                                if (!exoplayerPlaying(player) && !exoplayerBuffering(player)) {
-//                                   try {
-//                                        exoplayerTwoStreams();
-//                                    } catch (InterruptedException e) {
-//                                        throw new RuntimeException(e);
-//                                    }
-//                                }
-//                            }
-                            if (active_video == 2 && !exoplayerPlaying(player2)) {
-                                if (!exoplayerPlaying(player2) && !exoplayerBuffering(player2)) {
-                                    try {
-                                        exoplayerTwoStreams();
-                                    } catch (InterruptedException e) {
-                                        throw new RuntimeException(e);
-                                    }
-                                }
-                            } else {
-                                showLogoWhenNoStream();
-                            }
-                        }
-                    });
-
-                    recordingStatus = o.getInt("active_recording");
-                    Runnable recordingRunner = new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                recordingStatus();
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-                    };
-                    Thread recodingThread = new Thread(recordingRunner);
-                    recodingThread.start();
-                    recodingThread.join();
-
-                    if (!o.isNull("detected_id")) {
-                        detected_id = o.getInt("detected_id");
-                    }
-                    detected_object = o.getString("detected_object");
-                    if (!o.isNull("detected_ago")) {
-                        detected_ago = o.getInt("detected_ago");
-                    }
-                    try {
-                        try {
-                            if(tunnistuskytkenta) {
-                                Detector();
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        Runnable batteryRunner = new Runnable() {
-                            @Override
-                            public void run() {
-                                setBattery();
-                            }
-                        };
-                        Thread batteryThread = new Thread(batteryRunner);
-                        batteryThread.start();
-                        batteryThread.join();
-                        Runnable powerRunner = new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    if (!powerService()) {
-                                        showLogoWhenNoStream();
-                                    }
-                                } catch (ParseException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }
-                        };
-                        Thread powerThread = new Thread(powerRunner);
-                        powerThread.start();
-                        powerThread.join();
-                        new Handler(Looper.getMainLooper()).post(new Runnable() {
-                            @Override
-                            public void run() {
-                                koiraNopeus.setText(Double.toString(speed));
-                            }
-                        });
-                        new Handler(Looper.getMainLooper()).post(new Runnable() {
-                            @Override
-                            public void run() {
-                                speedAndLocation();
-                            }
-                        });
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-                if (first.getString("event_type").equalsIgnoreCase("route")) {
-                    ob = first.getJSONObject("message");
-                    JSONObject oc = ob.getJSONObject("geometry");
-                    JSONArray obj3 = oc.getJSONArray("coordinates");
-                    ArrayList<LatLng> latLngList = new ArrayList<>();
-                    if (!oc.isNull("coordinates")) {
-                        for (int i = 0; i < obj3.length(); i++) {
-                            JSONArray arr = obj3.getJSONArray(i);
-                            double lat = arr.getDouble(0);
-                            double lon = arr.getDouble(1);
-                            if (lat != 0.0)
-                                latLngList.add(new LatLng(lon, lat));
-                        }
-                        Collections.reverse(latLngList);
-                        if (latLngList.size() > 20) {
-                            latLngList.subList(20, latLngList.size()).clear();
-                        }
-                        route = latLngList;
-                    }
-                }
-            }
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
     private void signIn() {
         signInRequest = BeginSignInRequest.builder()
                 .setPasswordRequestOptions(BeginSignInRequest.PasswordRequestOptions.builder()
@@ -2248,7 +2016,129 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+    public void startService() {
+        Intent serviceIntent = new Intent(this, WebsocketService.class);
+        serviceIntent.putExtra("inputExtra", "HukCa taustapalvelu");
+        ContextCompat.startForegroundService(this, serviceIntent);
+        startForegroundService(serviceIntent);
 
+    }
+
+    public void stopService() {
+        Intent serviceIntent = new Intent(this, WebsocketService.class);
+        stopService(serviceIntent);
+    }
+    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+        @SuppressLint("SetTextI18n")
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Bundle b = intent.getBundleExtra("LocationUpdates");
+            try {
+                latLong = b.getParcelable("LatLng");
+                if (firstTime) {
+                    new Handler().postDelayed(() -> {
+                        new Handler().postDelayed(() ->
+                                mMap.moveCamera(CameraUpdateFactory.newLatLng(latLong)), 100);
+                        mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
+                        firstTime = false;
+                    }, 100);
+                }
+                if (marker != null) {
+                    marker.remove();
+                    marker = null;
+                }
+                if (marker == null) {
+                    marker = mMap.addMarker(new MarkerOptions().title("koira").position(latLong).icon(BitmapDescriptorFactory.fromResource(R.drawable.dog_icon_red_24)));
+                }
+
+
+            } catch (Exception e) {
+            }
+            bat_soc = b.getInt("Bat_soc");
+            alt = b.getInt("Alt");
+            speed = b.getInt("Speed");
+            last_update = b.getString("Last_update");
+            camera_mode = b.getInt("Camera_mode");
+            ir_active = b.getInt("Ir_active");
+            recordingStatus = b.getInt("Recording_activated");
+            try {
+                recordingStatus();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            try {
+                detected_id = b.getInt("Detected_ID");
+            } catch (Exception e) {
+            }
+            try {
+                detected_object = b.getString("Detected_Object");
+            } catch (Exception e) {
+            }
+            try {
+                detected_ago = b.getInt("Detected_Ago");
+            } catch (Exception e) {
+            }
+            try {
+                try {
+                    if(tunnistuskytkenta) {
+                        Detector();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                setBattery();
+
+                if (!powerService()) {
+                    showLogoWhenNoStream();
+                }
+                active_video = b.getInt("Active_video");
+                if (active_video == 2 && !exoplayerPlaying(player2)) {
+                    if (!exoplayerPlaying(player2) && !exoplayerBuffering(player2)) {
+                        try {
+                            exoplayerTwoStreams();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                } else {
+                    showLogoWhenNoStream();
+                }
+                koiraNopeus.setText(String.valueOf(speed));
+                //if (checkGPSandNetwork()) {
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
+    };
+
+    private BroadcastReceiver bMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Bundle a = intent.getBundleExtra("Route");
+            try {
+                route = a.getParcelableArrayList("Route");
+                PolylineOptions polylineOptions = new PolylineOptions();
+                polylineOptions.color(Color.RED);
+                polylineOptions.width(8);
+                gpsTrack = mMap.addPolyline(polylineOptions);
+                gpsTrack.setPoints(route);
+                gpsTrack.setZIndex(1000);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    };
 }
 
 

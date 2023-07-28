@@ -8,10 +8,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.susiturva.susicam.DatabaseHandlers.DatabaseHelper;
-import com.susiturva.susicam.DatabaseHandlers.MyDBHandler;
+import com.susiturva.susicam.databasehandlers.DatabaseHelper;
+import com.susiturva.susicam.databasehandlers.MyDBHandler;
 
 import java.util.ArrayList;
 import java.util.List;
