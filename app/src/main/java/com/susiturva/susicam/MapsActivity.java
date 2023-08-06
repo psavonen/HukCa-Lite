@@ -1802,7 +1802,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (resultCode == RESULT_CANCELED) {
                 Toast.makeText(getApplicationContext(), "Päivitys peruutettu", Toast.LENGTH_LONG).show();
             } else if (resultCode == RESULT_OK) {
-                Toast.makeText(getApplicationContext(),"Päivitys valmiina! Käynnistä sovellus uudelleen.", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(),"Päivitys valmiina! Käynnistä ohjelma uudelleen.", Toast.LENGTH_LONG).show();
             } else {
                 Toast.makeText(getApplicationContext(), "Päivitys epäonnistui " + resultCode, Toast.LENGTH_LONG).show();
                 checkUpdate();

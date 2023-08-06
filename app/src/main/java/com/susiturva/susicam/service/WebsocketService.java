@@ -87,25 +87,6 @@ public class WebsocketService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        db = new DatabaseHelper(this);
-        sarjanumerot.addAll(db.getAllSarjanumerot());
-        for (MyDBHandler sarjanumero : sarjanumerot) {
-            srnumero = String.valueOf(sarjanumero.getSarjanumero());
-        }
-        db.close();
-        dbh = new DatabaseHelperHukcaKey(this);
-        hukcakeyt.addAll(dbh.getAllHuckaKeyt());
-        for (MyDBHandlerHukcaKey hukcakey : hukcakeyt) {
-            hukca_key = String.valueOf(hukcakey.getHukca_key());
-        }
-        dbh.close();
-
-        String serial_hash = srnumero;
-       try {
-            createWebSocketClient();
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
 
         return START_STICKY;
     }
@@ -126,6 +107,25 @@ public class WebsocketService extends Service {
                 .build();
         startForegroundService(new Intent(this, WebsocketService.class));
         startForeground(1,notification);
+        db = new DatabaseHelper(this);
+        sarjanumerot.addAll(db.getAllSarjanumerot());
+        for (MyDBHandler sarjanumero : sarjanumerot) {
+            srnumero = String.valueOf(sarjanumero.getSarjanumero());
+        }
+        db.close();
+        dbh = new DatabaseHelperHukcaKey(this);
+        hukcakeyt.addAll(dbh.getAllHuckaKeyt());
+        for (MyDBHandlerHukcaKey hukcakey : hukcakeyt) {
+            hukca_key = String.valueOf(hukcakey.getHukca_key());
+        }
+        dbh.close();
+
+        String serial_hash = srnumero;
+        try {
+            createWebSocketClient();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
 
     }
 
