@@ -10,6 +10,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.IntentSender;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -325,6 +326,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public boolean onPrepareOptionsMenu(Menu menu) {
         MenuItem myItem = menu.findItem(R.id.SN);
         myItem.setTitle("S/N: " + srnumero);
+        MenuItem versItem = menu.findItem(R.id.version);
+        try {
+            PackageInfo pInfo = this.getPackageManager().getPackageInfo(this.getPackageName(), 0);
+            versItem.setTitle("V: " + pInfo.versionName);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+
         MenuItem tunnistusTitle = menu.findItem(R.id.tunnistus);
         if (!tunnistuskytkenta) {
             tunnistusTitle.setTitle("Hahmontunnistus päälle");
