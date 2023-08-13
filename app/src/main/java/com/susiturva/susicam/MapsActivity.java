@@ -459,7 +459,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         for (MyDBHandlerHukcaKey hukcakey : hukcakeyt) {
             hukca_key = String.valueOf(hukcakey.getHukca_key());
         }
-
+        if (!isMyServiceRunning(WebsocketService.class)) {
+            startService();
+        }
         playerView = findViewById(R.id.player);
         playerView.hideController();
         playerView.setShowBuffering(PlayerView.SHOW_BUFFERING_ALWAYS);
@@ -1824,6 +1826,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     String idToken = credential.getGoogleIdToken();
                     if (idToken !=  null) {
                         setHukcaKey(idToken);
+                        if(!isMyServiceRunning(WebsocketService.class)) {
+                            startService();
+                        }
                     }
                 } catch (ApiException e) {
                     // ...
@@ -2013,10 +2018,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
             dbh.insert(ValiHukca_key);
             dbh.close();
-            System.out.println("Oli epäkelpo hukkis");
+            if(!isMyServiceRunning(WebsocketService.class)) {
+                startService();
+            }
+            //System.out.println("Oli epäkelpo hukkis");
         }
         else {
-            System.out.println("Käypäinen hukkis");
+            //System.out.println("Käypäinen hukkis");
+            if(!isMyServiceRunning(WebsocketService.class)) {
+                startService();
+            }
         }
     }
 
@@ -2107,11 +2118,24 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 active_video = b.getInt("Active_video");
                 if (active_video == 2 && !exoplayerPlaying(player2)) {
                     if (!exoplayerPlaying(player2) && !exoplayerBuffering(player2)) {
-                        try {
-                            exoplayerTwoStreams();
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
+                        if (!videoCheck) {
+                            new Handler().postDelayed(() ->
+                                    {
+                                        try {
+                                            exoplayerTwoStreams();
+                                        } catch (InterruptedException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                        //createWebSocketClient();
+                                    },
+                                    8000);
+                            if(!isMyServiceRunning(WebsocketService.class)) {
+                                startService();
+                            }
+                            videoCheck = true;
                         }
+                    } else {
+                        videoCheck = false;
                     }
                 } /*else {
                     showLogoWhenNoStream();
