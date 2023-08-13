@@ -230,7 +230,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private boolean broadcast = false;
     private boolean huckaOn = false;
     private boolean recordVideoOn = false;
-    private boolean videoCheck = true;
+    private boolean videoCheck = false;
     private boolean fullscreenBackSwitch = false;
     private boolean tunnistuskytkenta = false;
     private ImageButton btnSwitch;
@@ -2113,9 +2113,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             throw new RuntimeException(e);
                         }
                     }
-                } else {
+                } /*else {
                     showLogoWhenNoStream();
-                }
+                }*/
                 koiraNopeus.setText(String.valueOf(speed));
                 //if (checkGPSandNetwork()) {
 
