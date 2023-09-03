@@ -376,9 +376,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         );
 
         setContentView(R.layout.activity_maps);
-       /* if (!isMyServiceRunning(WebsocketService.class)) {
-            startService();
-        }*/
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         oneTapClient = Identity.getSignInClient(this);
@@ -459,9 +456,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         for (MyDBHandlerHukcaKey hukcakey : hukcakeyt) {
             hukca_key = String.valueOf(hukcakey.getHukca_key());
         }
-        if (!isMyServiceRunning(WebsocketService.class)) {
-            startService();
-        }
         playerView = findViewById(R.id.player);
         playerView.hideController();
         playerView.setShowBuffering(PlayerView.SHOW_BUFFERING_ALWAYS);
@@ -514,6 +508,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             throw new RuntimeException(e);
                         }
                         //createWebSocketClient();
+                        if (!isMyServiceRunning(WebsocketService.class)) {
+                            startService();
+                        }
                     },
                     6000);
         } catch (Exception e) {
@@ -871,9 +868,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     protected void onResume() {
         super.onResume();
-        if (!isMyServiceRunning(WebsocketService.class)) {
+        /*if (!isMyServiceRunning(WebsocketService.class)) {
             startService();
-        }
+        }*/
         try {
             new Handler().postDelayed(() ->
                             exoplayerAudio(),
@@ -1380,7 +1377,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         if (lineInBetween != null)  {
                             lineInBetween.remove();
                         }
-                        drawLineInBetween(latLng, latLong );
+                       // drawLineInBetween(latLng, latLong );
                     }
                 });
             };
@@ -2058,7 +2055,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         public void onReceive(Context context, Intent intent) {
             Bundle b = intent.getBundleExtra("LocationUpdates");
             try {
-                latLong = b.getParcelable("LatLng");
+                LatLng latLongUnchecked = b.getParcelable("LatLng");
+                LatLng check = new LatLng(0,0);
+                assert latLongUnchecked != null;
+                if (!latLongUnchecked.equals(check)) {
+                    latLong = latLongUnchecked;
+                }
                 if (firstTime) {
                     new Handler().postDelayed(() -> {
                         new Handler().postDelayed(() ->
@@ -2160,8 +2162,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 polylineOptions.color(Color.RED);
                 polylineOptions.width(8);
                 gpsTrack = mMap.addPolyline(polylineOptions);
-                gpsTrack.setPoints(route);
                 gpsTrack.setZIndex(1000);
+                gpsTrack.setPoints(route);
+
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
