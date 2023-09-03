@@ -1377,7 +1377,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         if (lineInBetween != null)  {
                             lineInBetween.remove();
                         }
-                       // drawLineInBetween(latLng, latLong );
+                        drawLineInBetween(latLng, latLong );
                     }
                 });
             };
