@@ -891,7 +891,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(true);
         mMap.getUiSettings().setCompassEnabled(true);
-        //mMap.addTileOverlay(new TileOverlayOptions().tileProvider(wmsTileProvider));
+        mMap.addTileOverlay(new TileOverlayOptions().tileProvider(wmsTileProvider));
         mMap.setMaxZoomPreference(16);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLong));
     }
