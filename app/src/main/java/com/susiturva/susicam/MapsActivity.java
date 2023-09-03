@@ -891,7 +891,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(true);
         mMap.getUiSettings().setCompassEnabled(true);
-        mMap.addTileOverlay(new TileOverlayOptions().tileProvider(wmsTileProvider));
+        //mMap.addTileOverlay(new TileOverlayOptions().tileProvider(wmsTileProvider));
         mMap.setMaxZoomPreference(16);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLong));
     }
@@ -2157,6 +2157,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         public void onReceive(Context context, Intent intent) {
             Bundle a = intent.getBundleExtra("Route");
             try {
+                if (gpsTrack != null) {
+                    gpsTrack.remove();
+                }
                 route = a.getParcelableArrayList("Route");
                 PolylineOptions polylineOptions = new PolylineOptions();
                 polylineOptions.color(Color.RED);
@@ -2164,8 +2167,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 gpsTrack = mMap.addPolyline(polylineOptions);
                 gpsTrack.setZIndex(1000);
                 gpsTrack.setPoints(route);
-
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
