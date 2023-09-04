@@ -182,13 +182,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ArrayList<LatLng> route = new ArrayList<>();
     private Polyline gpsTrack;
     private Polyline lineInBetween;
-    private int alt;
-    private int speed;
     private Double diagonalInches;
     private static final double EARTH_RADIUS = 6378100.0;
 
     private final long MIN_TIME = 1000; // 1 second
     private final long MIN_DIST = 0; // 5 Meters
+    private int alt;
+    private int speed;
+    private int videoCounter = 4;
     private int bat_soc;
     private int recordingStatus;
     private int camera_mode;
@@ -498,21 +499,56 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         recordVideo = findViewById(R.id.recordVideo);
         usbMode = findViewById(R.id.usbMode);
         keskitaPuhelimeen = findViewById(R.id.keskitaPuhelimeen);
-
+        try {
+            exoplayerTwoStreams();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         try {
             new Handler().postDelayed(() ->
                     {
-                        try {
-                            exoplayerTwoStreams();
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                        //createWebSocketClient();
+
+                           /* Runnable videoRunner = new Runnable() {
+                                @Override
+                                public void run() {
+
+                                    for (int i = 0; i < videoCounter; i++) {
+                                        if (!exoplayerPlaying(player)) {
+                                            new Handler().post(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    try {
+                                                        exoplayerTwoStreams();
+                                                    } catch (InterruptedException e) {
+                                                        throw new RuntimeException(e);
+                                                    }
+                                                }
+                                            });
+                                            try {
+                                                Thread.sleep(4000);
+                                            } catch (InterruptedException e) {
+                                                throw new RuntimeException(e);
+                                            }
+                                        if (!exoplayerPlaying(player) && i == videoCounter) {
+                                            Toast.makeText(MapsActivity.this,
+                                                    "Ei video yhteyttä.",
+                                                    Toast.LENGTH_SHORT).show();
+                                        }
+                                        }
+                                    }
+                                }
+                            };
+                            Thread videoThread = new Thread(videoRunner);
+                            videoThread.start();*/
+
+                        /* if (!exoplayerPlaying(player)) {
+                             exoplayerTwoStreams();
+                         }*/
                         if (!isMyServiceRunning(WebsocketService.class)) {
                             startService();
                         }
                     },
-                    6000);
+                    16000);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -534,13 +570,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         btnSwitch.setOnClickListener(v -> {
             if (!exoplayerPlaying(player)) {
                 try {
-                    exoplayerTwoStreams();
+                        exoplayerTwoStreams();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }
+
             btnSwitch.setBackground(null);
-           showLogoWhenNoStream();
+           //showLogoWhenNoStream();
            if (diagonalInches <= SCREEN_SIZE_THRESHOLD) {
                 if (!switcher) {
                     playerView.setVisibility(View.INVISIBLE);
@@ -868,9 +905,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     protected void onResume() {
         super.onResume();
-        /*if (!isMyServiceRunning(WebsocketService.class)) {
+        if (!isMyServiceRunning(WebsocketService.class)) {
             startService();
-        }*/
+        }
         try {
             new Handler().postDelayed(() ->
                             exoplayerAudio(),
@@ -1077,10 +1114,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onDestroy() {
         super.onDestroy();
-        stopService();
-  /*      player.release();
+        if(isMyServiceRunning(WebsocketService.class)) {
+            stopService();
+        }
+        player.release();
         player2.release();
-        playerAudio.release();*/
+        playerAudio.release();
 
     }
 
@@ -1404,20 +1443,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onPlayerError(PlaybackException error) {
                 Player.Listener.super.onPlayerError(error);
-               showLogoWhenNoStream();
+               //showLogoWhenNoStream();
                 try {
                     if (powerService()) {
-                        Toast.makeText(MapsActivity.this,
-                                "Ei video yhteyttä.",
-                                Toast.LENGTH_SHORT).show();
+
                         new Handler().postDelayed(() ->
                                         player.setPlayWhenReady(true),
                                 10000);
                     }
                     else {
-                        Toast.makeText(MapsActivity.this,
+                        /*Toast.makeText(MapsActivity.this,
                                 "Ei yhteyttä laitteeseen",
-                                Toast.LENGTH_LONG).show();
+                                Toast.LENGTH_LONG).show();*/
                     }
                 } catch (ParseException e) {
                     throw new RuntimeException(e);
@@ -2114,9 +2151,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
                 setBattery();
 
-                if (!powerService()) {
+               /* if (!powerService()) {
                     showLogoWhenNoStream();
-                }
+                }*/
                 active_video = b.getInt("Active_video");
                 if (active_video == 2 && !exoplayerPlaying(player2)) {
                     if (!exoplayerPlaying(player2) && !exoplayerBuffering(player2)) {
@@ -2128,9 +2165,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                         } catch (InterruptedException e) {
                                             throw new RuntimeException(e);
                                         }
-                                        //createWebSocketClient();
                                     },
-                                    8000);
+                                    14000);
                             if(!isMyServiceRunning(WebsocketService.class)) {
                                 startService();
                             }
