@@ -297,7 +297,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(i);
                 return true;
-            case R.id.tunnistus:
+            /*case R.id.tunnistus:
                 if (!tunnistuskytkenta) {
                     tunnistusPaalle();
                     tunnistuskytkenta = true;
@@ -305,7 +305,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     tunnistusPois();
                     tunnistuskytkenta = false;
                 }
-                return true;
+                return true;*/
             case R.id.sarjanumero:
                 Intent intent = new Intent(com.susiturva.susicam.MapsActivity.this, Therion.class);
                 startActivity(intent);
@@ -335,12 +335,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             e.printStackTrace();
         }
 
-        MenuItem tunnistusTitle = menu.findItem(R.id.tunnistus);
+       /* MenuItem tunnistusTitle = menu.findItem(R.id.tunnistus);
         if (!tunnistuskytkenta) {
             tunnistusTitle.setTitle("Hahmontunnistus päälle");
         } else {
             tunnistusTitle.setTitle("Hahmontunnistus pois");
-        }
+        }*/
         return true;
     }
 
@@ -1851,7 +1851,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (resultCode == RESULT_CANCELED) {
                 Toast.makeText(getApplicationContext(), "Päivitys peruutettu", Toast.LENGTH_LONG).show();
             } else if (resultCode == RESULT_OK) {
-                Toast.makeText(getApplicationContext(),"Päivitys valmiina! Käynnistä ohjelma uudelleen.", Toast.LENGTH_LONG).show();
+                final String appPackageName = getPackageName(); // getPackageName() from Context or Activity object
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + appPackageName)));
+                } catch (android.content.ActivityNotFoundException anfe) {
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + appPackageName)));
+                }
+                //Toast.makeText(getApplicationContext(),"Päivitys valmiina! Käynnistä ohjelma uudelleen.", Toast.LENGTH_LONG).show();
             } else {
                 Toast.makeText(getApplicationContext(), "Päivitys epäonnistui " + resultCode, Toast.LENGTH_LONG).show();
                 checkUpdate();
