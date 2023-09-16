@@ -607,7 +607,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 fullscreen.setVisibility(View.VISIBLE);
                 piilossa = false;
                 sendSound.setVisibility(View.VISIBLE);
-                recordVideo.setVisibility(View.VISIBLE);
+                recordVideo.setVisibility(View.INVISIBLE);
                 usbMode.setVisibility(View.INVISIBLE);
                 toiminnot.setText(">");
             } else {
@@ -1123,6 +1123,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
+
     private void setControl(String url) {
         String encoded = Base64.getEncoder().encodeToString((USERNAME_PASSWORD).getBytes(StandardCharsets.UTF_8));
         Thread thread = new Thread(() -> {
@@ -1475,6 +1476,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onPause() {
         super.onPause();
+        if(isMyServiceRunning(WebsocketService.class)) {
+            stopService();
+        }
         /*try{
             player.release();
         } catch(Exception e){
@@ -2029,7 +2033,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         e.printStackTrace();
                     }
                 });
-
+        if(!isMyServiceRunning(WebsocketService.class)) {
+            startService();
+        }
     }
     private void setHukcaKey(String idToken) throws InterruptedException, JSONException {
         hukcakeyt.addAll(dbh.getAllHuckaKeyt());
