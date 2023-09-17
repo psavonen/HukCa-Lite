@@ -297,15 +297,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(i);
                 return true;
-            /*case R.id.tunnistus:
+            case R.id.tunnistus:
                 if (!tunnistuskytkenta) {
-                    tunnistusPaalle();
+                    //tunnistusPaalle();
                     tunnistuskytkenta = true;
                 } else {
-                    tunnistusPois();
+                    //tunnistusPois();
                     tunnistuskytkenta = false;
                 }
-                return true;*/
+                return true;
             case R.id.sarjanumero:
                 Intent intent = new Intent(com.susiturva.susicam.MapsActivity.this, Therion.class);
                 startActivity(intent);
@@ -335,12 +335,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             e.printStackTrace();
         }
 
-       /* MenuItem tunnistusTitle = menu.findItem(R.id.tunnistus);
+        MenuItem tunnistusTitle = menu.findItem(R.id.tunnistus);
         if (!tunnistuskytkenta) {
             tunnistusTitle.setTitle("Hahmontunnistus päälle");
         } else {
             tunnistusTitle.setTitle("Hahmontunnistus pois");
-        }*/
+        }
         return true;
     }
 

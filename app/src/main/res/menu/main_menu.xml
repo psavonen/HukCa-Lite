@@ -2,8 +2,8 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/restart"
         android:title="Käynnistä ohjelma uudelleen"/>
-<!--    <item android:id="@+id/tunnistus"-->
-<!--        android:title="Hahmontunnistuksen kytkentä"/>-->
+    <item android:id="@+id/tunnistus"
+        android:title="Hahmontunnistuksen kytkentä"/>
     <item android:id="@+id/massamuisti"
         android:title="Aseta laite massamuistitilaan"/>
     <item android:id="@+id/katsoja"
