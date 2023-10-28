@@ -379,9 +379,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         setContentView(R.layout.activity_maps);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        oneTapClient = Identity.getSignInClient(this);
+//        oneTapClient = Identity.getSignInClient(this);
         //account = GoogleSignIn.getLastSignedInAccount(this);
-        signIn();
+//        signIn();
         /*String serverClientId = getString(R.string.server_client_id);
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(serverClientId)
@@ -544,7 +544,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         /* if (!exoplayerPlaying(player)) {
                              exoplayerTwoStreams();
                          }*/
-                        if (!isMyServiceRunning(WebsocketService.class)) {
+                        if (isMyServiceRunning(WebsocketService.class)) {
+                            stopService();
+                            startService();
+                        } else {
                             startService();
                         }
                     },
@@ -1117,9 +1120,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if(isMyServiceRunning(WebsocketService.class)) {
             stopService();
         }
-        player.release();
-        player2.release();
-        playerAudio.release();
+//        player.release();
+//        player2.release();
+//        playerAudio.release();
 
     }
 

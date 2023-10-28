@@ -9,7 +9,7 @@
     <item android:id="@+id/katsoja"
         android:title="Lisää seuraajia"/>
     <item android:id="@+id/sarjanumero"
-        android:title="Aseta sarjanumero"/>
+        android:title="Vaihda kameraa"/>
     <item android:id="@+id/SN"
         android:title="-"/>
     <item android:id="@+id/version"
