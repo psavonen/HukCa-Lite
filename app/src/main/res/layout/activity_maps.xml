@@ -120,22 +120,22 @@
         android:layout_height="wrap_content"
         android:text=""
         android:textSize="10pt"/>
-    <TextView
-        android:id="@+id/omaNopeus"
-        android:textColor="#008000"
-        android:layout_toEndOf="@id/onOff"
-        android:layout_width="wrap_content"
-        android:background="#000000"
-        android:layout_height="wrap_content"
-        android:text="0 "
-        android:textSize="10pt"/>
+<!--    <TextView-->
+<!--        android:id="@+id/omaNopeus"-->
+<!--        android:textColor="#008000"-->
+<!--        android:layout_toEndOf="@id/onOff"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:background="#000000"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="0 "-->
+<!--        android:textSize="10pt"/>-->
     <TextView
         android:id="@+id/koiraNopeus"
         android:textColor="#FF0000"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="#000000"
-        android:layout_toEndOf="@id/omaNopeus"
+        android:layout_toEndOf="@id/onOff"
         android:text="0"
         android:textSize="10pt"/>
 
