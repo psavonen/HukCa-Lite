@@ -76,9 +76,9 @@ public class Therion extends Activity {
     private static final String AUTH_URL = "https://toor.hopto.org/api/v1/users/login?id_token=";
     private static final String AUTH_URL_HUKCA_KEY = "https://toor.hopto.org/api/v1/users/login?hukca_key=";
 
-    private static final String OWNER_URL = "https://toor.hopto.org/api/v1/users/owner/";
+    private static final String OWNER_URL = "https://toor.hopto.org/api/v1/users/watcher/";
     private final String XAPIKEY = "awidjilherg";
-
+    private String email = "";
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_therion);
@@ -236,6 +236,8 @@ public class Therion extends Activity {
                 if (connection.getResponseCode() == 200) {
                     inputStream[0] = connection.getInputStream();
                     userEmail[0] =  this.convertStreamToString(inputStream[0]);
+                    JSONObject jsonObject = new JSONObject(userEmail[0]);
+                    email = jsonObject.getString("email");
                 }
                 if (connection.getResponseCode() == 500) {
                     String err = connection.getResponseMessage();
@@ -243,6 +245,8 @@ public class Therion extends Activity {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
             }
         });
         thread.start();
@@ -282,9 +286,6 @@ public class Therion extends Activity {
                 connection.setRequestProperty("Authorization", "Basic " + encoded);
                 connection.setRequestProperty("x-apikey", hukcaKey);
 
-                Map<String, List<String>> dili =  connection.getHeaderFields();
-                int responseCode = connection.getResponseCode();
-                String response = connection.getResponseMessage();
                 if (connection.getResponseCode() == 200 || connection.getResponseCode() == 307) {
                     inputStream[0] = connection.getInputStream();
                     userEmail[0] =  this.convertStreamToString(inputStream[0]);
@@ -300,8 +301,12 @@ public class Therion extends Activity {
         thread.start();
         thread.join();
         String parsable = userEmail[0];
-        parsable = parsable.replaceAll("\"", "").replaceAll("\\[", "").replaceAll("]", "");
-        list = Arrays.asList(parsable.split("\\s*,\\s*"));
+        if (parsable != null) {
+            parsable = parsable.replaceAll("\"", "").replaceAll("\\[", "").replaceAll("]", "");
+            list = Arrays.asList(parsable.split("\\s*,\\s*"));
+        } else {
+            list.add("Sähköpostiasi (" + email + ") ei ole lisätty millekään kameralle.");
+        }
 
         for (int i = 0; i < list.size(); i++) {
             LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -320,8 +325,7 @@ public class Therion extends Activity {
                         for (int y = 0; y < i; y++) {
                             db.deleteSarjanumeroById(y);
                         }
-                    }
-                    catch (Exception e){
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
 
@@ -335,8 +339,8 @@ public class Therion extends Activity {
                 }
             });
             layout.addView(buttonView, p);
-
         }
+
     }
     private void setHukcaKey(String idToken) throws InterruptedException, JSONException {
         hukcakeyt.addAll(dbh.getAllHuckaKeyt());
