@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name">HukCa</string>
+    <string name="app_name">HukCa-Lite</string>
     <string name="recordVideo_tooltip">Tallenna videokuvaa laitteeseen</string>
     <string name="koira_tooltip">Keskitä GPS koiraan</string>
     <string name="lahetys_tooltip">Lähetä karkoitusääni laitteelle</string>
