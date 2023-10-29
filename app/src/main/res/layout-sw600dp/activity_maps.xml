@@ -150,16 +150,16 @@
         android:text=""
         android:textSize="10pt"/>
 
-    <ProgressBar
-        android:id="@+id/battery"
-        style="@android:style/Widget.ProgressBar.Horizontal"
-        android:layout_width="80dp"
-        android:layout_height="20dp"
-        android:layout_alignParentRight="true"
-        android:secondaryProgressTint="#ffffff"
-        android:layout_marginTop="2dp"
-        android:layout_marginEnd="50dp"
-        />
+<!--    <ProgressBar-->
+<!--        android:id="@+id/battery"-->
+<!--        style="@android:style/Widget.ProgressBar.Horizontal"-->
+<!--        android:layout_width="80dp"-->
+<!--        android:layout_height="20dp"-->
+<!--        android:layout_alignParentRight="true"-->
+<!--        android:secondaryProgressTint="#ffffff"-->
+<!--        android:layout_marginTop="2dp"-->
+<!--        android:layout_marginEnd="50dp"-->
+<!--        />-->
     <ImageButton
         android:id="@+id/aani"
         android:alpha="@string/opacity"
