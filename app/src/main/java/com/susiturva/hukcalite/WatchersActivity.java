@@ -1,4 +1,4 @@
-package com.susiturva.susicam;
+package com.susiturva.hukcalite;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -17,10 +17,11 @@ import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import com.susiturva.susicam.databasehandlers.DatabaseHelper;
-import com.susiturva.susicam.databasehandlers.DatabaseHelperHukcaKey;
-import com.susiturva.susicam.databasehandlers.MyDBHandler;
-import com.susiturva.susicam.databasehandlers.MyDBHandlerHukcaKey;
+import com.susiturva.hukcalite.databasehandlers.DatabaseHelper;
+import com.susiturva.hukcalite.databasehandlers.DatabaseHelperHukcaKey;
+import com.susiturva.hukcalite.databasehandlers.MyDBHandler;
+import com.susiturva.hukcalite.databasehandlers.MyDBHandlerHukcaKey;
+import com.susiturva.susicam.R;
 
 import org.json.JSONArray;
 import org.json.JSONException;

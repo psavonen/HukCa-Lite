@@ -1,4 +1,4 @@
-package com.susiturva.susicam;
+package com.susiturva.hukcalite;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -8,8 +8,9 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 
-import com.susiturva.susicam.databasehandlers.DatabaseHelper;
-import com.susiturva.susicam.databasehandlers.MyDBHandler;
+import com.susiturva.hukcalite.databasehandlers.DatabaseHelper;
+import com.susiturva.hukcalite.databasehandlers.MyDBHandler;
+import com.susiturva.susicam.R;
 
 import java.util.ArrayList;
 import java.util.List;

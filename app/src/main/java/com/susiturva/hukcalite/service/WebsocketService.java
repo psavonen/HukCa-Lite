@@ -1,4 +1,4 @@
-package com.susiturva.susicam.service;
+package com.susiturva.hukcalite.service;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -17,12 +17,13 @@ import com.google.android.gms.maps.model.LatLng;
 import com.neovisionaries.ws.client.WebSocket;
 import com.neovisionaries.ws.client.WebSocketAdapter;
 import com.neovisionaries.ws.client.WebSocketFactory;
-import com.susiturva.susicam.MapsActivity;
+import com.susiturva.hukcalite.MapsActivity;
+
+import com.susiturva.hukcalite.databasehandlers.DatabaseHelper;
+import com.susiturva.hukcalite.databasehandlers.DatabaseHelperHukcaKey;
+import com.susiturva.hukcalite.databasehandlers.MyDBHandler;
+import com.susiturva.hukcalite.databasehandlers.MyDBHandlerHukcaKey;
 import com.susiturva.susicam.R;
-import com.susiturva.susicam.databasehandlers.DatabaseHelper;
-import com.susiturva.susicam.databasehandlers.DatabaseHelperHukcaKey;
-import com.susiturva.susicam.databasehandlers.MyDBHandler;
-import com.susiturva.susicam.databasehandlers.MyDBHandlerHukcaKey;
 
 import org.json.JSONArray;
 import org.json.JSONException;

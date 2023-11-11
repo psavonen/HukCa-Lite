@@ -1,4 +1,4 @@
-package com.susiturva.susicam;
+package com.susiturva.hukcalite;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -19,8 +19,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
-import android.graphics.PorterDuff;
-import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -33,7 +31,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
-import android.os.StrictMode;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.provider.MediaStore;
@@ -48,7 +45,6 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -76,7 +72,6 @@ import androidx.media3.ui.PlayerView;
 
 import com.google.android.gms.auth.api.identity.BeginSignInRequest;
 import com.google.android.gms.auth.api.identity.BeginSignInResult;
-import com.google.android.gms.auth.api.identity.Identity;
 import com.google.android.gms.auth.api.identity.SignInClient;
 import com.google.android.gms.auth.api.identity.SignInCredential;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -111,17 +106,14 @@ import com.google.android.play.core.install.model.AppUpdateType;
 import com.google.android.play.core.install.model.InstallStatus;
 import com.google.android.play.core.install.model.UpdateAvailability;
 import com.google.android.play.core.tasks.Task;
-import com.neovisionaries.ws.client.WebSocket;
-import com.neovisionaries.ws.client.WebSocketAdapter;
-import com.neovisionaries.ws.client.WebSocketFactory;
-import com.susiturva.susicam.databasehandlers.DatabaseHelper;
-import com.susiturva.susicam.databasehandlers.DatabaseHelperHukcaKey;
-import com.susiturva.susicam.databasehandlers.MyDBHandler;
-import com.susiturva.susicam.databasehandlers.MyDBHandlerHukcaKey;
-import com.susiturva.susicam.service.WebsocketService;
+import com.susiturva.hukcalite.databasehandlers.DatabaseHelper;
+import com.susiturva.hukcalite.databasehandlers.DatabaseHelperHukcaKey;
+import com.susiturva.hukcalite.databasehandlers.MyDBHandler;
+import com.susiturva.hukcalite.databasehandlers.MyDBHandlerHukcaKey;
+import com.susiturva.hukcalite.service.WebsocketService;
+import com.susiturva.susicam.R;
 
 import org.java_websocket.client.WebSocketClient;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -135,8 +127,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
@@ -144,7 +134,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -307,7 +296,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 //                }
 //                return true;
             case R.id.sarjanumero:
-                Intent intent = new Intent(com.susiturva.susicam.MapsActivity.this, Therion.class);
+                Intent intent = new Intent(com.susiturva.hukcalite.MapsActivity.this, Therion.class);
                 startActivity(intent);
                 return true;
 //            case R.id.massamuisti:
@@ -1649,7 +1638,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             });
             thread.start();
-            Toast.makeText(com.susiturva.susicam.MapsActivity.this,
+            Toast.makeText(com.susiturva.hukcalite.MapsActivity.this,
                 "HAVAINTO: " + detected_object,
                 Toast.LENGTH_SHORT).show();
         }

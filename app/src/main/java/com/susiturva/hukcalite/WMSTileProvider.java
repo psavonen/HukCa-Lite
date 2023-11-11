@@ -1,4 +1,4 @@
-package com.susiturva.susicam;
+package com.susiturva.hukcalite;
 
 import com.google.android.gms.maps.model.UrlTileProvider;
 

@@ -1,4 +1,4 @@
-package com.susiturva.susicam.databasehandlers;
+package com.susiturva.hukcalite.databasehandlers;
 
 import android.annotation.SuppressLint;
 import android.content.ContentValues;

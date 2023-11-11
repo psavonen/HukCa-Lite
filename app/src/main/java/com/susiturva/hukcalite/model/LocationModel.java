@@ -1,4 +1,4 @@
-package com.susiturva.susicam.model;
+package com.susiturva.hukcalite.model;
 
 public class LocationModel {
     public String session_id;

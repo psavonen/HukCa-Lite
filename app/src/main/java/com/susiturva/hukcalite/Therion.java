@@ -1,4 +1,4 @@
-package com.susiturva.susicam;
+package com.susiturva.hukcalite;
 
 import android.Manifest;
 import android.app.Activity;
@@ -8,13 +8,8 @@ import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -33,10 +28,11 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.susiturva.susicam.databasehandlers.DatabaseHelper;
-import com.susiturva.susicam.databasehandlers.DatabaseHelperHukcaKey;
-import com.susiturva.susicam.databasehandlers.MyDBHandler;
-import com.susiturva.susicam.databasehandlers.MyDBHandlerHukcaKey;
+import com.susiturva.hukcalite.databasehandlers.DatabaseHelper;
+import com.susiturva.hukcalite.databasehandlers.DatabaseHelperHukcaKey;
+import com.susiturva.hukcalite.databasehandlers.MyDBHandler;
+import com.susiturva.hukcalite.databasehandlers.MyDBHandlerHukcaKey;
+import com.susiturva.susicam.R;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -51,7 +47,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
-import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -92,7 +87,7 @@ public class Therion extends Activity {
                 Manifest.permission.RECORD_AUDIO
         };
         if (!hasPermissions(this, PERMISSIONS)) {
-            ActivityCompat.requestPermissions(com.susiturva.susicam.Therion.this, PERMISSIONS, PERMISSION_ALL);
+            ActivityCompat.requestPermissions(com.susiturva.hukcalite.Therion.this, PERMISSIONS, PERMISSION_ALL);
 //            String[] requiredPermissions = { Manifest.permission.READ_EXTERNAL_STORAGE };
 //            ActivityCompat.requestPermissions(this, requiredPermissions, 0);
         }

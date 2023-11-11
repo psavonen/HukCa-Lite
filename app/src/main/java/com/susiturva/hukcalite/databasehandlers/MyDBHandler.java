@@ -1,4 +1,4 @@
-package com.susiturva.susicam.databasehandlers;
+package com.susiturva.hukcalite.databasehandlers;
 
 public class MyDBHandler {
 
